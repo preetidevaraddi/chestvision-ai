@@ -1,0 +1,59 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+credentials/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Datasets - DO NOT upload
+backend/dataset/raw/
+backend/dataset/zips/
+backend/dataset/images/
+backend/dataset/real_images/
+backend/dataset/covid_github/
+backend/dataset/v3_workspace/
+backend/dataset/v3_strict/
+
+# Generated data
+backend/uploads/
+backend/reports/
+backend/logs/
+
+# Model files - DO NOT upload
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# Training outputs
+training_history.csv
+training_logs.txt
+duplicate_report.csv
+
+# IDE / OS
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

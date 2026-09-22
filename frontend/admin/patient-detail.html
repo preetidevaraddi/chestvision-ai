@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Details — ChestVision AI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+
+  <div class="card mb-16" id="patient-card">
+    <div class="skeleton" style="height:60px;"></div>
+  </div>
+
+  <div class="flex-between">
+    <h2 class="section-title">X-Ray Uploads &amp; Analyses</h2>
+    <button class="btn btn-primary btn-sm" id="open-upload-btn">Upload X-Ray</button>
+  </div>
+
+  <div class="card" id="xrays-card">
+    <div class="skeleton" style="height:18px;"></div>
+  </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-backdrop hidden" id="upload-modal">
+  <div class="modal">
+    <h3>Upload Chest X-Ray</h3>
+    <p class="text-muted" style="font-size:13px; margin-top:4px;">Accepted formats: JPG, JPEG, PNG. Max 15MB.</p>
+
+    <div class="dropzone mt-16" id="dropzone">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div class="dz-title">Click to select or drag a file here</div>
+      <div class="dz-sub">JPG, JPEG, or PNG</div>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png" style="display:none;">
+    </div>
+
+    <div id="preview-wrap" class="mt-16 hidden">
+      <div class="preview-frame"><img id="preview-img" alt="X-ray preview"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancel-upload-btn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="confirm-upload-btn" type="button" disabled>Upload</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("admin");
+  renderShell({ role: "admin", pageTitle: "Patient Details", pageSub: "Loading..." });
+
+  const params = new URLSearchParams(window.location.search);
+  const patientId = params.get("id");
+  if (!patientId) window.location.href = "patients.html";
+
+  const patientCard = document.getElementById("patient-card");
+  const xraysCard = document.getElementById("xrays-card");
+
+  function formatDateOnly(value) {
+    if (!value) return "Date unavailable";
+    const datePart = String(value).split("T")[0].split(" ")[0];
+    const d = new Date(datePart);
+    if (isNaN(d.getTime())) return "Date unavailable";
+    try {
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC"
+      });
+    } catch (e) {
+      return "Date unavailable";
+    }
+  }
+
+  function genderBadge(g) {
+    return `<span class="text-muted" style="text-transform:capitalize;">${g}</span>`;
+  }
+
+  async function loadPatient() {
+    try {
+      const p = await Api.getPatient(patientId);
+      const topbarH1 = document.querySelector(".topbar h1");
+      if (topbarH1) topbarH1.textContent = p.name;
+      let topbarSub = document.querySelector(".topbar-sub");
+      if (!topbarSub) {
+        topbarSub = document.createElement("div");
+        topbarSub.className = "topbar-sub";
+        const topbarDiv = document.querySelector(".topbar > div");
+        if (topbarDiv) topbarDiv.appendChild(topbarSub);
+      }
+      if (topbarSub) topbarSub.textContent = `Patient ID: ${p.patient_id}`;
+      patientCard.innerHTML = `
+        <div class="flex-between">
+          <div>
+            <h3 class="mb-0">${escapeHtml(p.name)}</h3>
+            <div class="text-muted mono" style="font-size:12.5px; margin-top:4px;">${p.patient_id}</div>
+          </div>
+          <button class="btn btn-outline btn-sm" id="edit-btn">Edit</button>
+        </div>
+        <div class="form-row mt-16">
+          <div><label>Age</label><div>${p.age}</div></div>
+          <div><label>Gender</label><div>${genderBadge(p.gender)}</div></div>
+        </div>
+        <div class="form-row mt-16">
+          <div><label>Contact</label><div>${escapeHtml(p.contact_number || "—")}</div></div>
+          <div><label>Registered</label><div class="text-muted">${formatDateOnly(p.created_at)}</div></div>
+        </div>
+        <div id="edit-form-wrap"></div>
+      `;
+      document.getElementById("edit-btn").addEventListener("click", () => showEditForm(p));
+    } catch (err) {
+      apiErrorToast(err, "Could not load patient.");
+    }
+  }
+
+  function showEditForm(p) {
+    const wrap = document.getElementById("edit-form-wrap");
+    wrap.innerHTML = `
+      <div class="card mt-16" style="background:var(--bg-app);">
+        <div class="form-row">
+          <div><label>Name</label><input type="text" id="edit-name" value="${escapeHtml(p.name)}"></div>
+          <div><label>Age</label><input type="number" id="edit-age" value="${p.age}"></div>
+        </div>
+        <div class="form-row mt-16">
+          <div><label>Contact</label><input type="tel" id="edit-contact" value="${escapeHtml(p.contact_number || "")}"></div>
+          <div><label>Gender</label>
+            <select id="edit-gender">
+              <option value="male" ${p.gender === "male" ? "selected" : ""}>Male</option>
+              <option value="female" ${p.gender === "female" ? "selected" : ""}>Female</option>
+              <option value="other" ${p.gender === "other" ? "selected" : ""}>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex-gap mt-16">
+          <button class="btn btn-primary btn-sm" id="save-edit-btn">Save Changes</button>
+          <button class="btn btn-outline btn-sm" id="cancel-edit-btn">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("cancel-edit-btn").addEventListener("click", () => (wrap.innerHTML = ""));
+    document.getElementById("save-edit-btn").addEventListener("click", async () => {
+      try {
+        await Api.updatePatient(patientId, {
+          name: document.getElementById("edit-name").value.trim(),
+          age: parseInt(document.getElementById("edit-age").value, 10),
+          gender: document.getElementById("edit-gender").value,
+          contact_number: document.getElementById("edit-contact").value.trim() || null,
+        });
+        showToast("Patient updated.", "success");
+        loadPatient();
+      } catch (err) {
+        apiErrorToast(err, "Could not update patient.");
+      }
+    });
+  }
+
+  async function loadXrays() {
+    try {
+      const xrays = await Api.listPatientXrays(patientId);
+      if (!xrays.length) {
+        xraysCard.innerHTML = `<div class="empty-state">No X-rays uploaded yet.</div>`;
+        return;
+      }
+      xraysCard.innerHTML = xrays
+        .map((x) => {
+          const analysesHtml = x.analyses.length
+            ? x.analyses
+                .map(
+                  (a) => `
+                <div class="flex-between" style="padding:10px 0; border-top:1px solid var(--border);">
+                  <div>
+                    <div class="flex-gap">
+                      <strong>${escapeHtml(a.top_prediction_label)}</strong>
+                      <span class="mono text-muted">${Math.round(a.top_prediction_confidence * 100)}%</span>
+                      ${statusBadgeHtml(a.priority)}
+                      ${demoBadgeHtml(a.is_demo_model)}
+                    </div>
+                  </div>
+                  <div class="flex-gap">
+                    <a href="analysis-result.html?result_id=${a.result_id}" class="btn btn-outline btn-sm">View Result</a>
+                    ${
+                      a.has_report
+                        ? `<a href="report-view.html?report_id=${a.report_id}" class="btn btn-secondary btn-sm">View Report</a>`
+                        : `<button class="btn btn-primary btn-sm gen-report-btn" data-result-id="${a.result_id}">Generate Report</button>`
+                    }
+                  </div>
+                </div>`
+                )
+                .join("")
+            : `<div class="text-muted" style="padding:10px 0; border-top:1px solid var(--border); font-size:13.5px;">Not yet analyzed.</div>`;
+
+          return `
+            <div style="padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+              <div class="flex-between">
+                <div class="text-muted mono" style="font-size:12px;">Uploaded ${formatDateOnly(x.uploaded_at)}</div>
+                <button class="btn btn-secondary btn-sm analyze-btn" data-image-id="${x.image_id}">Start AI Analysis</button>
+              </div>
+              ${analysesHtml}
+            </div>
+          `;
+        })
+        .join("");
+
+      document.querySelectorAll(".analyze-btn").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          btn.innerHTML = `<span class="spinner spinner-dark"></span> Analyzing…`;
+          try {
+            const result = await Api.startAnalysis(btn.dataset.imageId);
+            showToast("AI analysis complete.", "success");
+            window.location.href = `analysis-result.html?result_id=${result.result_id}`;
+          } catch (err) {
+            apiErrorToast(err, "Analysis failed.");
+            btn.disabled = false;
+            btn.textContent = "Start AI Analysis";
+          }
+        })
+      );
+
+      document.querySelectorAll(".gen-report-btn").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          btn.innerHTML = `<span class="spinner spinner-dark"></span> Generating…`;
+          try {
+            const report = await Api.generateReport(btn.dataset.resultId);
+            showToast("Report generated.", "success");
+            window.location.href = `report-view.html?report_id=${report.report_id}`;
+          } catch (err) {
+            apiErrorToast(err, "Could not generate report.");
+            btn.disabled = false;
+            btn.textContent = "Generate Report";
+          }
+        })
+      );
+    } catch (err) {
+      apiErrorToast(err, "Could not load X-rays.");
+    }
+  }
+
+  // ---- Upload modal wiring ----
+  const uploadModal = document.getElementById("upload-modal");
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("file-input");
+  const previewWrap = document.getElementById("preview-wrap");
+  const previewImg = document.getElementById("preview-img");
+  const confirmBtn = document.getElementById("confirm-upload-btn");
+  let selectedFile = null;
+
+  document.getElementById("open-upload-btn").addEventListener("click", () => uploadModal.classList.remove("hidden"));
+  document.getElementById("cancel-upload-btn").addEventListener("click", closeUploadModal);
+
+  function closeUploadModal() {
+    uploadModal.classList.add("hidden");
+    selectedFile = null;
+    fileInput.value = "";
+    previewWrap.classList.add("hidden");
+    confirmBtn.disabled = true;
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      showToast("Only JPG, JPEG, or PNG files are allowed.", "error");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      showToast("File exceeds the 15MB limit.", "error");
+      return;
+    }
+    selectedFile = file;
+    previewImg.src = URL.createObjectURL(file);
+    previewWrap.classList.remove("hidden");
+    confirmBtn.disabled = false;
+  }
+
+  confirmBtn.addEventListener("click", async () => {
+    if (!selectedFile) return;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<span class="spinner"></span> Uploading…`;
+    try {
+      await Api.uploadXray(patientId, selectedFile);
+      showToast("X-ray uploaded successfully.", "success");
+      closeUploadModal();
+      loadXrays();
+    } catch (err) {
+      apiErrorToast(err, "Upload failed.");
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Upload";
+    }
+  });
+
+  loadPatient();
+  loadXrays();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Reports — ChestVision AI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+  <input type="search" id="search-input" placeholder="Search reports…" style="max-width:320px; margin-bottom:16px;">
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Report ID</th><th>Generated</th><th></th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="3"><div class="skeleton" style="height:18px;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("doctor");
+  renderShell({ role: "doctor", pageTitle: "Patient Reports", pageSub: "View-only access to AI analysis reports" });
+
+  let allReports = [];
+  const tbody = document.getElementById("tbody");
+
+  function render(reports) {
+    if (!reports.length) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state">No reports found.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = reports
+      .map(
+        (r) => `<tr>
+          <td class="mono">${r.report_id.slice(0, 8)}</td>
+          <td class="text-muted">${formatDate(r.generated_at)}</td>
+          <td><a href="report-detail.html?report_id=${r.report_id}" class="btn btn-outline btn-sm">View</a></td>
+        </tr>`
+      )
+      .join("");
+  }
+
+  (async () => {
+    try {
+      allReports = await Api.doctorListReports();
+      render(allReports);
+    } catch (err) {
+      apiErrorToast(err, "Could not load reports.");
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state">Failed to load.</div></td></tr>`;
+    }
+  })();
+
+  document.getElementById("search-input").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    render(allReports.filter((r) => r.report_id.toLowerCase().includes(q)));
+  });
+</script>
+</body>
+</html>

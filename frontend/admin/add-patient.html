@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Patient — ChestVision AI</title>
+<meta name="description" content="Register a new patient and optionally upload a chest X-ray image in ChestVision AI.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+  <div class="card" style="max-width:680px;">
+    <form id="add-patient-form" class="form-grid" novalidate>
+
+      <!-- ── Patient details ────────────────────────────────── -->
+      <div class="form-row">
+        <div>
+          <label for="name">Full name <span style="color:var(--status-urgent)">*</span></label>
+          <input type="text" id="name" autocomplete="off" required>
+          <div class="field-error" id="name-error"></div>
+        </div>
+        <div>
+          <label for="age">Age <span style="color:var(--status-urgent)">*</span></label>
+          <input type="number" id="age" min="0" max="130" required>
+          <div class="field-error" id="age-error"></div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label for="gender">Gender <span style="color:var(--status-urgent)">*</span></label>
+          <select id="gender" required>
+            <option value="">Select…</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+          <div class="field-error" id="gender-error"></div>
+        </div>
+        <div>
+          <label for="contact_number">Contact number</label>
+          <input type="tel" id="contact_number" autocomplete="off">
+        </div>
+      </div>
+
+      <div>
+        <label for="address">Address</label>
+        <textarea id="address" rows="2"></textarea>
+      </div>
+
+      <!-- ── Optional X-ray upload ──────────────────────────── -->
+      <hr class="form-section-divider">
+
+      <div>
+        <label>Chest X-ray Image <span class="field-hint" style="font-weight:400;display:inline;">(optional — JPG, JPEG, PNG · max 15 MB)</span></label>
+        <div class="file-upload-wrap">
+          <label class="file-upload-label" id="file-upload-label" for="xray-file">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span id="file-label-text">Click to browse or drag &amp; drop a chest X-ray image</span>
+            <input type="file" id="xray-file" accept=".jpg,.jpeg,.png" aria-label="Chest X-ray image upload">
+          </label>
+        </div>
+        <!-- Selected file info -->
+        <div class="file-upload-name" id="file-name-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12l2 2 4-4" stroke="var(--status-normal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="9" stroke="var(--status-normal)" stroke-width="1.8"/>
+          </svg>
+          <span id="file-name-text"></span>
+          <button type="button" class="file-upload-remove" id="remove-file" title="Remove selected file" aria-label="Remove selected file">✕</button>
+        </div>
+        <div class="field-error" id="file-error"></div>
+      </div>
+
+      <!-- ── X-ray upload status (shown after patient created) ─ -->
+      <div class="alert alert-info" id="xray-status" style="display:none;margin-bottom:0;"></div>
+
+      <!-- ── Actions ───────────────────────────────────────────── -->
+      <div class="flex-gap">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Add Patient</button>
+        <a href="patients.html" class="btn btn-outline">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("admin");
+  renderShell({ role: "admin", pageTitle: "Add Patient", pageSub: "Register a new patient record" });
+
+  /* ── Constants ─────────────────────────────────────────────── */
+  const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+  const ALLOWED_EXT   = /\.(jpg|jpeg|png)$/i;
+  const MAX_SIZE_MB   = 15;
+
+  /* ── DOM refs ──────────────────────────────────────────────── */
+  const form         = document.getElementById("add-patient-form");
+  const submitBtn    = document.getElementById("submit-btn");
+  const fileInput    = document.getElementById("xray-file");
+  const fileNameRow  = document.getElementById("file-name-row");
+  const fileNameText = document.getElementById("file-name-text");
+  const removeBtn    = document.getElementById("remove-file");
+  const fileError    = document.getElementById("file-error");
+  const xrayStatus   = document.getElementById("xray-status");
+
+  let selectedFile = null;
+
+  /* ── Helpers ───────────────────────────────────────────────── */
+  function showFieldError(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? "block" : "none";
+  }
+
+  function showXrayStatus(msg, type = "info") {
+    xrayStatus.className = `alert alert-${type}`;
+    xrayStatus.textContent = msg;
+    xrayStatus.style.display = "block";
+  }
+
+  function validateFile(file) {
+    if (!file) return null;
+    const extOk = ALLOWED_EXT.test(file.name);
+    const typeOk = ALLOWED_TYPES.includes(file.type);
+    if (!extOk || !typeOk) {
+      return "Only JPG, JPEG, or PNG files are accepted for X-ray images.";
+    }
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > MAX_SIZE_MB) {
+      return `File is too large (${sizeMB.toFixed(1)} MB). Maximum allowed size is ${MAX_SIZE_MB} MB.`;
+    }
+    return null; // valid
+  }
+
+  function setSelectedFile(file) {
+    selectedFile = file;
+    const err = validateFile(file);
+    if (err) {
+      fileError.textContent = err;
+      fileError.style.display = "block";
+      fileNameRow.classList.remove("show");
+      selectedFile = null;
+      fileInput.value = "";
+      return;
+    }
+    fileError.style.display = "none";
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    fileNameText.textContent = `${file.name} (${sizeMB} MB)`;
+    fileNameRow.classList.add("show");
+  }
+
+  function clearSelectedFile() {
+    selectedFile = null;
+    fileInput.value = "";
+    fileNameRow.classList.remove("show");
+    fileNameText.textContent = "";
+    fileError.style.display = "none";
+    xrayStatus.style.display = "none";
+  }
+
+  /* ── File input events ─────────────────────────────────────── */
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (file) setSelectedFile(file);
+    else clearSelectedFile();
+  });
+
+  removeBtn.addEventListener("click", clearSelectedFile);
+
+  // Drag-and-drop on the label
+  const uploadLabel = document.getElementById("file-upload-label");
+  uploadLabel.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploadLabel.style.borderColor = "var(--primary)";
+    uploadLabel.style.background  = "var(--primary-light)";
+  });
+  uploadLabel.addEventListener("dragleave", () => {
+    uploadLabel.style.borderColor = "";
+    uploadLabel.style.background  = "";
+  });
+  uploadLabel.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadLabel.style.borderColor = "";
+    uploadLabel.style.background  = "";
+    const file = e.dataTransfer.files[0];
+    if (file) setSelectedFile(file);
+  });
+
+  /* ── Form submit ───────────────────────────────────────────── */
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    xrayStatus.style.display = "none";
+
+    // Validate required patient fields
+    let hasErrors = false;
+    const name = document.getElementById("name").value.trim();
+    const ageRaw = document.getElementById("age").value;
+    const gender = document.getElementById("gender").value;
+
+    if (!name) {
+      showFieldError("name-error", "Full name is required.");
+      hasErrors = true;
+    } else {
+      showFieldError("name-error", "");
+    }
+
+    const age = parseInt(ageRaw, 10);
+    if (!ageRaw || isNaN(age) || age < 0 || age > 130) {
+      showFieldError("age-error", "Please enter a valid age (0–130).");
+      hasErrors = true;
+    } else {
+      showFieldError("age-error", "");
+    }
+
+    if (!gender) {
+      showFieldError("gender-error", "Please select a gender.");
+      hasErrors = true;
+    } else {
+      showFieldError("gender-error", "");
+    }
+
+    // Re-validate file if one is selected
+    if (selectedFile) {
+      const fileErr = validateFile(selectedFile);
+      if (fileErr) {
+        fileError.textContent = fileErr;
+        fileError.style.display = "block";
+        hasErrors = true;
+      }
+    }
+
+    if (hasErrors) return;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner"></span> Adding patient…`;
+
+    const payload = {
+      name,
+      age,
+      gender,
+      contact_number: document.getElementById("contact_number").value.trim() || null,
+      address: document.getElementById("address").value.trim() || null,
+    };
+
+    let patient;
+    try {
+      // Step 1: Create the patient
+      patient = await Api.addPatient(payload);
+    } catch (err) {
+      showToast(err && err.message ? err.message : "Could not add patient.", "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add Patient";
+      return;
+    }
+
+    // Step 2: Upload X-ray if one was selected
+    if (selectedFile) {
+      submitBtn.innerHTML = `<span class="spinner"></span> Uploading X-ray…`;
+      showXrayStatus("Uploading chest X-ray image…", "info");
+      try {
+        await Api.uploadXray(patient.patient_id, selectedFile);
+        showToast("Patient added and X-ray uploaded successfully.", "success");
+        showXrayStatus("✓ X-ray uploaded successfully.", "success");
+      } catch (uploadErr) {
+        const uploadMsg = uploadErr && uploadErr.message ? uploadErr.message : "X-ray upload failed.";
+        showToast(`Patient created, but X-ray upload failed: ${uploadMsg}`, "error");
+        showXrayStatus(`Patient was created, but the X-ray upload failed: ${uploadMsg}`, "error");
+        // Still navigate to patient detail so the user can retry upload from there
+        setTimeout(() => {
+          window.location.href = `patient-detail.html?id=${patient.patient_id}`;
+        }, 3000);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Add Patient";
+        return;
+      }
+    } else {
+      showToast("Patient added successfully.", "success");
+    }
+
+    // Navigate to patient detail page
+    window.location.href = `patient-detail.html?id=${patient.patient_id}`;
+  });
+
+  // Clear field errors on input
+  document.getElementById("name").addEventListener("input", () => showFieldError("name-error", ""));
+  document.getElementById("age").addEventListener("input",  () => showFieldError("age-error", ""));
+  document.getElementById("gender").addEventListener("change", () => showFieldError("gender-error", ""));
+</script>
+</body>
+</html>

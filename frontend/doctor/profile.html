@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — ChestVision AI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+  <div class="card" style="max-width:480px;">
+    <div class="flex-gap mb-16">
+      <div style="width:48px; height:48px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:18px;" id="avatar"></div>
+      <div>
+        <h3 class="mb-0" id="profile-name"></h3>
+        <span class="role-pill">Doctor</span>
+      </div>
+    </div>
+    <div class="text-muted" style="font-size:13.5px;">
+      Signed in as a doctor on ChestVision AI. Doctors have read-only access to patient records and
+      AI-assisted analysis reports — uploads, edits, and analysis are managed by Admin.
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("doctor");
+  renderShell({ role: "doctor", pageTitle: "Profile" });
+  const name = Auth.getName() || "Doctor";
+  document.getElementById("profile-name").textContent = name;
+  document.getElementById("avatar").textContent = name.charAt(0).toUpperCase();
+</script>
+</body>
+</html>

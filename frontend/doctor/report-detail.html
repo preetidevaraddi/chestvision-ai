@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Detail — ChestVision AI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+  <div id="content-wrap"><div class="skeleton" style="height:200px;"></div></div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("doctor");
+  renderShell({ role: "doctor", pageTitle: "AI Analysis Result", pageSub: "Read-only" });
+
+  const params = new URLSearchParams(window.location.search);
+  const reportId = params.get("report_id");
+  const wrap = document.getElementById("content-wrap");
+
+  async function load() {
+    try {
+      const r = await Api.doctorGetReport(reportId);
+      const a = r.analysis;
+      const p = r.patient;
+
+      wrap.innerHTML = `
+        ${a.is_demo_model ? `<div class="alert alert-demo"><strong>DEMO MODE:</strong> ${escapeHtml(a.disclaimer)}</div>` : `<div class="alert alert-info">${escapeHtml(a.disclaimer)}</div>`}
+
+        <div class="flex-between mb-16">
+          <div class="text-muted mono" style="font-size:12.5px;">Report ID: ${r.report_id}</div>
+          <a href="${fileUrl(r.report_path)}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
+        </div>
+
+        <div class="card mb-16">
+          <h3 class="mb-16">Patient Information</h3>
+          <div class="form-row">
+            <div><label>Name</label><div>${escapeHtml(p.name)}</div></div>
+            <div><label>Patient ID</label><div class="mono">${p.patient_id}</div></div>
+          </div>
+          <div class="form-row mt-16">
+            <div><label>Age</label><div>${p.age}</div></div>
+            <div><label>Gender</label><div style="text-transform:capitalize;">${p.gender}</div></div>
+          </div>
+        </div>
+
+        <div class="flex" style="gap:16px; flex-wrap:wrap;">
+          <div class="card" style="flex:1; min-width:300px;">
+            <h3 class="mb-16">AI Analysis</h3>
+            <div class="flex-gap mb-16">
+              ${uncertaintyBadgeHtml(a.uncertainty_status)}
+              ${statusBadgeHtml(a.priority)}
+            </div>
+            <div id="gauge-list"></div>
+          </div>
+          <div class="card" style="flex:1; min-width:280px;">
+            <h3 class="mb-16">Visual Explanation</h3>
+            <div class="flex" style="gap:10px;">
+              <div style="flex:1;">
+                <div class="preview-frame"><img src="${fileUrl(r.xray_image_path)}" alt="Original X-ray"></div>
+                <div class="text-muted mt-8" style="font-size:11.5px; text-align:center;">Original</div>
+              </div>
+              ${
+                a.heatmap_path
+                  ? `<div style="flex:1;">
+                       <div class="preview-frame"><img src="${fileUrl(a.heatmap_path)}" alt="Heatmap"></div>
+                       <div class="text-muted mt-8" style="font-size:11.5px; text-align:center;">AI-highlighted regions</div>
+                     </div>`
+                  : ""
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <h3 class="mb-8">Priority / Urgency</h3>
+          <p class="text-muted" style="font-size:13.5px;">
+            ${statusBadgeHtml(a.priority)} &nbsp; AI-assisted prioritization — not a diagnosis.
+          </p>
+        </div>
+
+        <div class="card mt-16">
+          <h3 class="mb-8">Disclaimer</h3>
+          <p class="text-muted" style="font-size:13px;">
+            This AI-assisted report is intended for decision support and should not be considered a
+            final medical diagnosis or a replacement for professional medical evaluation. This is an
+            academic final-year project prototype.
+          </p>
+        </div>
+      `;
+
+      document.getElementById("gauge-list").innerHTML = gaugeListHtml(a.predicted_conditions, 14);
+    } catch (err) {
+      apiErrorToast(err, "Could not load report.");
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

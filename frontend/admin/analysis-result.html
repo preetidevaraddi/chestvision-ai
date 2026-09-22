@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analysis Result — ChestVision AI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app-shell-root">
+  <div id="content-wrap">
+    <div class="skeleton" style="height:200px;"></div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script>
+<script>
+  Auth.requireRole("admin");
+  renderShell({ role: "admin", pageTitle: "AI Analysis Result" });
+
+  const params = new URLSearchParams(window.location.search);
+  const resultId = params.get("result_id");
+  const wrap = document.getElementById("content-wrap");
+
+  async function load() {
+    try {
+      // analysis-history gives us all results; find the matching one
+      const history = await Api.analysisHistory();
+      const analysis = history.find((a) => a.result_id === resultId);
+      if (!analysis) {
+        wrap.innerHTML = `<div class="empty-state">Analysis result not found.</div>`;
+        return;
+      }
+
+      const topPct = Math.round(analysis.top_prediction_confidence * 100);
+
+      wrap.innerHTML = `
+        ${analysis.is_demo_model ? `<div class="alert alert-demo"><strong>DEMO MODE:</strong> ${escapeHtml(analysis.disclaimer)}</div>` : `<div class="alert alert-info">${escapeHtml(analysis.disclaimer)}</div>`}
+
+        <div class="card mb-16">
+          <div class="flex-between">
+            <div>
+              <div class="text-muted" style="font-size:12.5px; text-transform:uppercase; letter-spacing:0.03em;">Top Prediction</div>
+              <h2 style="font-size:24px; margin-top:4px;">${escapeHtml(analysis.top_prediction_label)}</h2>
+            </div>
+            <div class="flex-gap">
+              ${uncertaintyBadgeHtml(analysis.uncertainty_status)}
+              ${statusBadgeHtml(analysis.priority)}
+            </div>
+          </div>
+          <div class="mt-16 text-muted" style="font-size:13px;">
+            Confidence: <span class="mono" style="color:var(--text-main); font-weight:600;">${topPct}%</span>
+            &nbsp;·&nbsp; Analyzed ${formatDate(analysis.analyzed_at)}
+          </div>
+        </div>
+
+        <div class="flex" style="gap:16px; flex-wrap:wrap;">
+          <div class="card" style="flex:1; min-width:320px;">
+            <h3 class="mb-16">Disease Classification</h3>
+            <div id="gauge-list"></div>
+          </div>
+
+          <div class="card" style="flex:1; min-width:280px;">
+            <h3 class="mb-16">Suspicious Region Visualization</h3>
+            ${
+              analysis.heatmap_path
+                ? `<div class="preview-frame"><img src="${fileUrl(analysis.heatmap_path)}" alt="Suspicious region heatmap"></div>
+                   <p class="text-muted mt-8" style="font-size:12px;">
+                     Highlighted regions indicate areas that influenced the AI prediction.
+                     This is not a confirmed disease location.
+                   </p>`
+                : `<div class="empty-state">No visual explanation available for this result.</div>`
+            }
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <h3 class="mb-8">Priority / Urgency Assessment</h3>
+          <p class="text-muted" style="font-size:13.5px;">
+            ${statusBadgeHtml(analysis.priority)}
+            &nbsp; This AI-assisted prioritization is decision support only and does not replace
+            professional medical diagnosis.
+          </p>
+        </div>
+      `;
+
+      document.getElementById("gauge-list").innerHTML = gaugeListHtml(analysis.predicted_conditions, 14);
+    } catch (err) {
+      apiErrorToast(err, "Could not load analysis result.");
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>
