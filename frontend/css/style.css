@@ -43,7 +43,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg-app);
+  background: var(--bg-app) url('../assets/bg-medical-ai.jpg') center/cover fixed;
   color: var(--text-main);
   font-family: var(--font-body);
   font-size: 15px;
@@ -76,7 +76,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 .sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--bg-sidebar);
+  background: linear-gradient(rgba(14,79,92,0.85), rgba(14,79,92,0.95)), url('../assets/bg-medical-ai.jpg') center/cover fixed;
   color: var(--text-inverse);
   padding: 24px 0;
   display: flex;
@@ -415,7 +415,7 @@ tbody tr:hover { background: var(--bg-app); }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #0e4f5c 0%, #123745 55%, #0a2b34 100%);
+  background: linear-gradient(160deg, rgba(14,79,92,0.85) 0%, rgba(18,55,69,0.9) 55%, rgba(10,43,52,0.95) 100%), url('../assets/bg-medical-ai.jpg') center/cover fixed;
   padding: 24px;
 }
 .auth-card {
@@ -454,7 +454,7 @@ tbody tr:hover { background: var(--bg-app); }
 }
 .landing-hero {
   padding: 64px 48px 80px 48px;
-  background: linear-gradient(160deg, #0e4f5c 0%, #123745 60%, #0a2b34 100%);
+  background: linear-gradient(160deg, rgba(14,79,92,0.85) 0%, rgba(18,55,69,0.9) 60%, rgba(10,43,52,0.95) 100%), url('../assets/bg-medical-ai.jpg') center/cover fixed;
   color: #eaf6f8;
 }
 .landing-hero-inner { max-width: 720px; }
