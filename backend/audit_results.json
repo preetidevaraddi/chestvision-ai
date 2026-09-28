@@ -1,0 +1,56 @@
+{
+    "total_images": 1175,
+    "class_counts": {
+        "Nodule": 247,
+        "Pneumonia": 247,
+        "Tuberculosis": 243,
+        "Normal": 242,
+        "COVID-19": 196
+    },
+    "dimensions": [
+        "(1064, 913)",
+        "(1695, 1570)",
+        "(1248, 832)",
+        "(2200, 2200)",
+        "(1778, 1168)",
+        "(1016, 616)",
+        "(1856, 1496)",
+        "(362, 330)",
+        "(1072, 624)",
+        "(979, 972)"
+    ],
+    "formats": [
+        "JPEG",
+        "PNG"
+    ],
+    "patient_ids_available": true,
+    "sources": "Source column missing, inferring from filenames/directories...",
+    "split": {
+        "train_images": 689,
+        "val_images": 146,
+        "test_images": 145,
+        "train_patients": 646,
+        "val_patients": 138,
+        "test_patients": 139,
+        "patient_overlap_train_val": 0,
+        "patient_overlap_train_test": 0,
+        "patient_overlap_val_test": 0
+    },
+    "image_overlap_train_val": 0,
+    "image_overlap_train_test": 0,
+    "image_overlap_val_test": 0,
+    "total_exact_duplicates": 0,
+    "cross_class_duplicates": 0,
+    "model": {
+        "architecture": "DenseNet121",
+        "trainable_params": 2165253,
+        "frozen_params": 4793728,
+        "labels": [
+            "COVID-19",
+            "Nodule",
+            "Normal",
+            "Pneumonia",
+            "Tuberculosis"
+        ]
+    }
+}

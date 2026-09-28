@@ -1,0 +1,79 @@
+{
+  "accuracy": 0.825503355704698,
+  "macro_precision": 0.8242541544477028,
+  "macro_recall": 0.8328962435414049,
+  "macro_f1": 0.8263233807835277,
+  "per_class_precision": [
+    0.9333333333333333,
+    0.8709677419354839,
+    0.696969696969697,
+    0.9,
+    0.72
+  ],
+  "per_class_recall": [
+    0.9032258064516129,
+    1.0,
+    0.696969696969697,
+    0.9642857142857143,
+    0.6
+  ],
+  "per_class_f1": [
+    0.9180327868852459,
+    0.9310344827586207,
+    0.696969696969697,
+    0.9310344827586207,
+    0.6545454545454545
+  ],
+  "confusion_matrix": [
+    [
+      28,
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      0,
+      27,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      23,
+      2,
+      6
+    ],
+    [
+      1,
+      0,
+      0,
+      27,
+      0
+    ],
+    [
+      1,
+      1,
+      10,
+      0,
+      18
+    ]
+  ],
+  "label_cols": [
+    "COVID-19",
+    "Nodule",
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis"
+  ],
+  "model_path": "C:\\Users\\Preeti Devaraddi\\Documents\\chestvision-ai-copy\\backend\\models_store\\new_model_v2\\chestvision_model.pt",
+  "epochs_completed": 15,
+  "dataset_splits": {
+    "train": 686,
+    "val": 145,
+    "test": 149
+  },
+  "file_size_mb": 27.130266189575195
+}

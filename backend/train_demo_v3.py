@@ -1,0 +1,297 @@
+import os
+import sys
+import json
+import logging
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms, models
+from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
+from sklearn.utils.class_weight import compute_class_weight
+from PIL import Image
+import random
+
+# ---------------------------------------------------------
+# REPRODUCIBILITY
+# ---------------------------------------------------------
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+set_seed(42)
+
+# ---------------------------------------------------------
+# CONFIGURATION
+# ---------------------------------------------------------
+WORKSPACE_DIR = r"c:\Users\Preeti Devaraddi\Documents\chestvision-ai-copy\backend\dataset\v3_workspace"
+MANIFEST_PATH = os.path.join(WORKSPACE_DIR, "dataset_manifest.csv")
+MODEL_STORE = r"c:\Users\Preeti Devaraddi\Documents\chestvision-ai-copy\backend\models_store\new_model_v3_demo"
+
+# Exclude Nodule
+CLASSES = ["COVID-19", "Normal", "Pneumonia", "Tuberculosis"]
+CLASS_TO_IDX = {cls: i for i, cls in enumerate(CLASSES)}
+IDX_TO_CLASS = {i: cls for cls, i in CLASS_TO_IDX.items()}
+
+MAX_EPOCHS = 50
+PATIENCE = 8
+BATCH_SIZE = 32
+
+os.makedirs(MODEL_STORE, exist_ok=True)
+
+# ---------------------------------------------------------
+# LOGGING
+# ---------------------------------------------------------
+log_path = os.path.join(MODEL_STORE, "training_logs.txt")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.FileHandler(log_path), logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+logger.info("--- CHESTVISION AI DEMO TRAINING (4-CLASS) ---")
+logger.info("NOTE: Nodule class excluded due to lack of genuine training data.")
+
+# ---------------------------------------------------------
+# DATASET
+# ---------------------------------------------------------
+class ChestVisionDataset(Dataset):
+    def __init__(self, df, transform=None):
+        self.df = df.reset_index(drop=True)
+        self.transform = transform
+        
+    def __len__(self):
+        return len(self.df)
+        
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+        img_path = row['filepath']
+        label_str = row['label']
+        
+        image = Image.open(img_path).convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+            
+        label_idx = CLASS_TO_IDX[label_str]
+        return image, label_idx
+
+def get_transforms():
+    # Mild realistic augmentation, NO flips per user instructions
+    train_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomRotation(10),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                             std=[0.229, 0.224, 0.225])
+    ])
+    val_test_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                             std=[0.229, 0.224, 0.225])
+    ])
+    return train_transform, val_test_transform
+
+# ---------------------------------------------------------
+# PREPARATION & TRAINING
+# ---------------------------------------------------------
+def main():
+    # Load manifest and filter out Nodule
+    df = pd.read_csv(MANIFEST_PATH)
+    df = df[df['label'] != 'Nodule'].copy()
+    
+    train_df = df[df['split'] == 'Train']
+    val_df = df[df['split'] == 'Val']
+    test_df = df[df['split'] == 'Test']
+    
+    # Save demo specific manifest and summary
+    demo_manifest_path = os.path.join(MODEL_STORE, "dataset_manifest.csv")
+    demo_summary_path = os.path.join(MODEL_STORE, "dataset_summary.csv")
+    df.to_csv(demo_manifest_path, index=False)
+    summary = df.groupby(['split', 'label', 'source']).size().reset_index(name='count')
+    summary.to_csv(demo_summary_path, index=False)
+    
+    logger.info("--- Data Summary BEFORE Training ---")
+    logger.info("Train counts:\n" + train_df['label'].value_counts().to_string())
+    logger.info("Val counts:\n" + val_df['label'].value_counts().to_string())
+    logger.info("Test counts:\n" + test_df['label'].value_counts().to_string())
+    
+    train_transform, val_transform = get_transforms()
+    
+    train_ds = ChestVisionDataset(train_df, transform=train_transform)
+    val_ds = ChestVisionDataset(val_df, transform=val_transform)
+    test_ds = ChestVisionDataset(test_df, transform=val_transform)
+    
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+    
+    # Class weights calculated exactly from training counts
+    y_train = train_df['label'].values
+    weights = compute_class_weight(class_weight='balanced', classes=np.array(CLASSES), y=y_train)
+    logger.info(f"Calculated Class Weights: {dict(zip(CLASSES, weights))}")
+    
+    with open(os.path.join(MODEL_STORE, "class_weights.json"), "w") as f:
+        json.dump(dict(zip(CLASSES, weights.tolist())), f, indent=4)
+        
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"Using device: {device}")
+    
+    weights_tensor = torch.FloatTensor(weights).to(device)
+    criterion = nn.CrossEntropyLoss(weight=weights_tensor)
+    
+    model = models.densenet121(weights=models.DenseNet121_Weights.IMAGENET1K_V1)
+    model.classifier = nn.Linear(model.classifier.in_features, len(CLASSES))
+    model = model.to(device)
+    
+    # Differential learning rates
+    early_params, later_params = [], []
+    for name, param in model.features.named_parameters():
+        if 'denseblock1' in name or 'denseblock2' in name or 'conv0' in name or 'norm0' in name:
+            early_params.append(param)
+        else:
+            later_params.append(param)
+            
+    classifier_params = list(model.classifier.parameters())
+    
+    optimizer = optim.AdamW([
+        {'params': early_params, 'lr': 1e-5},
+        {'params': later_params, 'lr': 3e-5},
+        {'params': classifier_params, 'lr': 1e-4}
+    ])
+    
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
+    
+    best_macro_f1 = 0.0
+    best_epoch = 0
+    epochs_no_improve = 0
+    history = []
+    
+    logger.info("Starting Training...")
+    for epoch in range(MAX_EPOCHS):
+        model.train()
+        train_loss = 0.0
+        for inputs, labels in train_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * inputs.size(0)
+            
+        train_loss /= len(train_ds)
+        
+        model.eval()
+        val_loss = 0.0
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item() * inputs.size(0)
+                _, preds = torch.max(outputs, 1)
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+                
+        val_loss /= len(val_ds)
+        val_macro_f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
+        
+        logger.info(f"Epoch {epoch+1}/{MAX_EPOCHS} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f} - Val Macro F1: {val_macro_f1:.4f}")
+        
+        history.append({
+            'epoch': epoch + 1,
+            'train_loss': train_loss,
+            'val_loss': val_loss,
+            'val_macro_f1': val_macro_f1
+        })
+        
+        scheduler.step(val_macro_f1)
+        
+        if val_macro_f1 > best_macro_f1:
+            best_macro_f1 = val_macro_f1
+            best_epoch = epoch + 1
+            epochs_no_improve = 0
+            torch.save(model.state_dict(), os.path.join(MODEL_STORE, "best_model.pt"))
+            logger.info("Saved new best_model.pt")
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= PATIENCE:
+                logger.info(f"Early stopping triggered after {PATIENCE} epochs without improvement.")
+                break
+                
+    torch.save(model.state_dict(), os.path.join(MODEL_STORE, "final_model.pt"))
+    pd.DataFrame(history).to_csv(os.path.join(MODEL_STORE, "training_history.csv"), index=False)
+    
+    with open(os.path.join(MODEL_STORE, "labels.json"), "w") as f:
+        json.dump(IDX_TO_CLASS, f, indent=4)
+        
+    with open(os.path.join(MODEL_STORE, "model_config.json"), "w") as f:
+        json.dump({
+            "architecture": "DenseNet121",
+            "pretrained": True,
+            "num_classes": len(CLASSES),
+            "classes": CLASSES
+        }, f, indent=4)
+        
+    logger.info("Training complete. Starting final evaluation...")
+    
+    # Evaluate best model
+    model.load_state_dict(torch.load(os.path.join(MODEL_STORE, "best_model.pt"), map_location=device, weights_only=True))
+    model.eval()
+    all_preds, all_labels = [], []
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+            
+    acc = accuracy_score(all_labels, all_preds)
+    macro_p, macro_r, macro_f1, _ = classification_report(all_labels, all_preds, target_names=CLASSES, output_dict=True, zero_division=0)['macro avg'].values()
+    report_dict = classification_report(all_labels, all_preds, target_names=CLASSES, output_dict=True, zero_division=0)
+    cm = confusion_matrix(all_labels, all_preds)
+    
+    # Save eval report
+    eval_report = {
+        "best_epoch": best_epoch,
+        "best_val_macro_f1": best_macro_f1,
+        "test_accuracy": acc,
+        "test_macro_precision": macro_p,
+        "test_macro_recall": macro_r,
+        "test_macro_f1": macro_f1,
+        "per_class": report_dict,
+        "confusion_matrix": cm.tolist()
+    }
+    
+    with open(os.path.join(MODEL_STORE, "metrics.json"), "w") as f:
+        json.dump(eval_report, f, indent=4)
+        
+    logger.info("--- EVALUATION REPORT ---")
+    logger.info(f"Best Epoch: {best_epoch}")
+    logger.info(f"Best Validation Macro F1: {best_macro_f1:.4f}")
+    logger.info(f"Test Accuracy: {acc:.4f}")
+    logger.info(f"Test Macro Precision: {macro_p:.4f}")
+    logger.info(f"Test Macro Recall: {macro_r:.4f}")
+    logger.info(f"Test Macro F1: {macro_f1:.4f}")
+    logger.info(f"\n{classification_report(all_labels, all_preds, target_names=CLASSES, zero_division=0)}")
+    logger.info(f"Confusion Matrix:\n{cm}")
+    
+if __name__ == "__main__":
+    main()

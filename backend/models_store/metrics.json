@@ -1,0 +1,34 @@
+{
+  "macro_precision": 0.0,
+  "macro_recall": 0.0,
+  "macro_f1": 0.0,
+  "macro_auc": null,
+  "per_class_precision": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "per_class_recall": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "per_class_f1": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "label_cols": [
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis",
+    "COVID-19",
+    "Nodule"
+  ]
+}

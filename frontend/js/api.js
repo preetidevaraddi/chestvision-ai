@@ -128,8 +128,13 @@ const Api = {
 /** Resolves a backend-relative filesystem path (e.g. .../uploads/x.png) to a servable URL. */
 function fileUrl(absolutePath) {
   if (!absolutePath) return "";
-  const marker = absolutePath.includes("/uploads/") ? "/uploads/" : "/reports/";
-  const idx = absolutePath.indexOf(marker);
-  const relative = idx >= 0 ? absolutePath.slice(idx) : absolutePath;
-  return `${API_BASE}/files${relative}`;
+  const normalized = absolutePath.replace(/\\/g, '/');
+  const match = normalized.match(/(\/uploads\/|\/reports\/)/i);
+  if (match) {
+    const relative = normalized.slice(match.index);
+    return `${API_BASE}/files${relative}`;
+  }
+  // Fallback if neither folder name is found
+  const parts = normalized.split('/');
+  return `${API_BASE}/files/${parts[parts.length - 1]}`;
 }

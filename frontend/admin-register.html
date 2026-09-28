@@ -1,201 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Admin Registration — ChestVision AI</title>
-<meta name="description" content="Create an Admin account for ChestVision AI to manage patients and chest X-ray analysis.">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Admin Registration — ChestVision AI</title>
+  <meta name="description"
+    content="Create an Admin account for ChestVision AI to manage patients and chest X-ray analysis.">
+  <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-<div class="auth-shell">
-  <div class="auth-card">
-    <div class="auth-brand">ChestVision AI</div>
-    <div class="auth-sub">Create an Admin account</div>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-brand">ChestVision AI</div>
+      <div class="auth-sub">Create an Admin account</div>
 
-    <div class="auth-role-tabs">
-      <a href="admin-register.html" class="active" id="tab-admin">Admin</a>
-      <a href="doctor-register.html" id="tab-doctor">Doctor</a>
+      <div class="auth-role-tabs">
+        <a href="admin-register.html" class="active" id="tab-admin" style="background-color:#185caa;">Admin</a>
+        <a href="doctor-register.html" id="tab-doctor">Doctor</a>
+      </div>
+
+      <form id="register-form" class="form-grid" novalidate>
+        <div>
+          <label for="name">Full name</label>
+          <input type="text" id="name" autocomplete="name" required pattern="[A-Za-z ]+"
+            oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '')">
+          <div class="field-error" id="name-error"></div>
+        </div>
+
+        <div>
+          <label for="email">Email address</label>
+          <input type="email" id="email" autocomplete="email" required>
+          <div class="field-error" id="email-error"></div>
+        </div>
+
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="new-password" required>
+          <ul class="pw-rules" id="pw-rules" aria-label="Password requirements">
+            <li id="rule-len">At least 8 characters</li>
+            <li id="rule-upper">One uppercase letter (A–Z)</li>
+            <li id="rule-lower">One lowercase letter (a–z)</li>
+            <li id="rule-digit">One number (0–9)</li>
+            <li id="rule-special">One special character (!@#$%^&amp;* …)</li>
+          </ul>
+        </div>
+
+        <div>
+          <label for="confirm_password">Confirm password</label>
+          <input type="password" id="confirm_password" autocomplete="new-password" required>
+          <div class="field-error" id="match-error"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
+          Create Admin Account
+        </button>
+      </form>
+
+      <div class="auth-switch">Already have an account? <a href="admin-login.html">Log in</a></div>
     </div>
-
-    <form id="register-form" class="form-grid" novalidate>
-      <div>
-        <label for="name">Full name</label>
-        <input type="text" id="name" autocomplete="name" required pattern="[A-Za-z ]+" oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '')">
-        <div class="field-error" id="name-error"></div>
-      </div>
-
-      <div>
-        <label for="email">Email address</label>
-        <input type="email" id="email" autocomplete="email" required>
-        <div class="field-error" id="email-error"></div>
-      </div>
-
-      <div>
-        <label for="password">Password</label>
-        <input type="password" id="password" autocomplete="new-password" required>
-        <ul class="pw-rules" id="pw-rules" aria-label="Password requirements">
-          <li id="rule-len">At least 8 characters</li>
-          <li id="rule-upper">One uppercase letter (A–Z)</li>
-          <li id="rule-lower">One lowercase letter (a–z)</li>
-          <li id="rule-digit">One number (0–9)</li>
-          <li id="rule-special">One special character (!@#$%^&amp;* …)</li>
-        </ul>
-      </div>
-
-      <div>
-        <label for="confirm_password">Confirm password</label>
-        <input type="password" id="confirm_password" autocomplete="new-password" required>
-        <div class="field-error" id="match-error"></div>
-      </div>
-
-      <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
-        Create Admin Account
-      </button>
-    </form>
-
-    <div class="auth-switch">Already have an account? <a href="admin-login.html">Log in</a></div>
   </div>
-</div>
 
-<script src="js/api.js"></script>
-<script src="js/ui.js"></script>
-<script>
-  /* ── helpers ───────────────────────────────────────────────── */
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    /* ── helpers ───────────────────────────────────────────────── */
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  const rules = {
-    len:     (v) => v.length >= 8,
-    upper:   (v) => /[A-Z]/.test(v),
-    lower:   (v) => /[a-z]/.test(v),
-    digit:   (v) => /\d/.test(v),
-    special: (v) => /[!@#$%^&*()\-_=+\[\]{};':"\\|,.<>\/?`~]/.test(v),
-  };
+    const rules = {
+      len: (v) => v.length >= 8,
+      upper: (v) => /[A-Z]/.test(v),
+      lower: (v) => /[a-z]/.test(v),
+      digit: (v) => /\d/.test(v),
+      special: (v) => /[!@#$%^&*()\-_=+\[\]{};':"\\|,.<>\/?`~]/.test(v),
+    };
 
-  function showFieldError(id, msg) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = msg;
-    el.style.display = msg ? "block" : "none";
-  }
-
-  function clearFieldError(id) {
-    showFieldError(id, "");
-  }
-
-  function allRulesMet(pw) {
-    return Object.values(rules).every((fn) => fn(pw));
-  }
-
-  /* ── live password strength indicator ─────────────────────── */
-  const pwInput = document.getElementById("password");
-  pwInput.addEventListener("input", () => {
-    const v = pwInput.value;
-    const map = { len: "rule-len", upper: "rule-upper", lower: "rule-lower", digit: "rule-digit", special: "rule-special" };
-    for (const [key, elId] of Object.entries(map)) {
-      const li = document.getElementById(elId);
-      if (!v) { li.className = ""; continue; }
-      li.className = rules[key](v) ? "ok" : "fail";
-    }
-    // also re-validate confirm if already touched
-    if (confirmInput.dataset.touched) checkMatch();
-    updateSubmitState();
-  });
-
-  /* ── confirm-password match ────────────────────────────────── */
-  const confirmInput = document.getElementById("confirm_password");
-  function checkMatch() {
-    const pw = pwInput.value;
-    const cpw = confirmInput.value;
-    if (!cpw) { clearFieldError("match-error"); return true; }
-    if (pw !== cpw) { showFieldError("match-error", "Passwords do not match."); return false; }
-    clearFieldError("match-error"); return true;
-  }
-  confirmInput.addEventListener("input", () => {
-    confirmInput.dataset.touched = "1";
-    checkMatch();
-    updateSubmitState();
-  });
-
-  /* ── email live validation ─────────────────────────────────── */
-  const emailInput = document.getElementById("email");
-  emailInput.addEventListener("blur", () => {
-    const v = emailInput.value.trim();
-    if (v && !EMAIL_RE.test(v)) {
-      showFieldError("email-error", "Please enter a valid email address (e.g. user@example.com).");
-    } else {
-      clearFieldError("email-error");
-    }
-    updateSubmitState();
-  });
-  emailInput.addEventListener("input", () => {
-    if (EMAIL_RE.test(emailInput.value.trim())) clearFieldError("email-error");
-    updateSubmitState();
-  });
-
-  /* ── name live validation ──────────────────────────────────── */
-  const nameInput = document.getElementById("name");
-  nameInput.addEventListener("input", () => {
-    // Allow only letters and spaces
-    nameInput.value = nameInput.value.replace(/[^a-zA-Z\s]/g, "");
-
-    if (nameInput.value.trim()) {
-      clearFieldError("name-error");
+    function showFieldError(id, msg) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = msg;
+      el.style.display = msg ? "block" : "none";
     }
 
-    updateSubmitState();
-  });
+    function clearFieldError(id) {
+      showFieldError(id, "");
+    }
 
-  /* ── enable/disable submit button ─────────────────────────── */
-  function updateSubmitState() {
-    const nameOk = nameInput.value.trim().length > 0;
-    const emailOk = EMAIL_RE.test(emailInput.value.trim());
-    const pwOk = allRulesMet(pwInput.value);
-    const matchOk = pwInput.value === confirmInput.value && confirmInput.value.length > 0;
-    document.getElementById("submit-btn").disabled = !(nameOk && emailOk && pwOk && matchOk);
-  }
+    function allRulesMet(pw) {
+      return Object.values(rules).every((fn) => fn(pw));
+    }
 
-  /* ── form submit ───────────────────────────────────────────── */
-  const form = document.getElementById("register-form");
-  const submitBtn = document.getElementById("submit-btn");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
-    const password = pwInput.value;
-    const confirm_password = confirmInput.value;
-
-    // Final client-side guard
-    if (!name) { showFieldError("name-error", "Full name is required."); return; }
-    if (!EMAIL_RE.test(email)) { showFieldError("email-error", "Please enter a valid email address."); return; }
-    if (!allRulesMet(password)) { return; }
-    if (password !== confirm_password) { showFieldError("match-error", "Passwords do not match."); return; }
-
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span class="spinner"></span> Creating account…`;
-    try {
-      await Api.registerAdmin({ name, email, password, confirm_password });
-      showToast("Admin account created. Please log in.", "success");
-      setTimeout(() => (window.location.href = "admin-login.html"), 900);
-    } catch (err) {
-      // Show backend validation errors inline when possible
-      const msg = err && err.message ? err.message : "Registration failed.";
-      if (msg.toLowerCase().includes("email")) {
-        showFieldError("email-error", msg);
-      } else if (msg.toLowerCase().includes("password")) {
-        showFieldError("match-error", msg);
-      } else {
-        showToast(msg, "error");
+    /* ── live password strength indicator ─────────────────────── */
+    const pwInput = document.getElementById("password");
+    pwInput.addEventListener("input", () => {
+      const v = pwInput.value;
+      const map = { len: "rule-len", upper: "rule-upper", lower: "rule-lower", digit: "rule-digit", special: "rule-special" };
+      for (const [key, elId] of Object.entries(map)) {
+        const li = document.getElementById(elId);
+        if (!v) { li.className = ""; continue; }
+        li.className = rules[key](v) ? "ok" : "fail";
       }
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Create Admin Account";
+      // also re-validate confirm if already touched
+      if (confirmInput.dataset.touched) checkMatch();
+      updateSubmitState();
+    });
+
+    /* ── confirm-password match ────────────────────────────────── */
+    const confirmInput = document.getElementById("confirm_password");
+    function checkMatch() {
+      const pw = pwInput.value;
+      const cpw = confirmInput.value;
+      if (!cpw) { clearFieldError("match-error"); return true; }
+      if (pw !== cpw) { showFieldError("match-error", "Passwords do not match."); return false; }
+      clearFieldError("match-error"); return true;
     }
-  });
-</script>
+    confirmInput.addEventListener("input", () => {
+      confirmInput.dataset.touched = "1";
+      checkMatch();
+      updateSubmitState();
+    });
+
+    /* ── email live validation ─────────────────────────────────── */
+    const emailInput = document.getElementById("email");
+    emailInput.addEventListener("blur", () => {
+      const v = emailInput.value.trim();
+      if (v && !EMAIL_RE.test(v)) {
+        showFieldError("email-error", "Please enter a valid email address (e.g. user@example.com).");
+      } else {
+        clearFieldError("email-error");
+      }
+      updateSubmitState();
+    });
+    emailInput.addEventListener("input", () => {
+      if (EMAIL_RE.test(emailInput.value.trim())) clearFieldError("email-error");
+      updateSubmitState();
+    });
+
+    /* ── name live validation ──────────────────────────────────── */
+    const nameInput = document.getElementById("name");
+    nameInput.addEventListener("input", () => {
+      // Allow only letters and spaces
+      nameInput.value = nameInput.value.replace(/[^a-zA-Z\s]/g, "");
+
+      if (nameInput.value.trim()) {
+        clearFieldError("name-error");
+      }
+
+      updateSubmitState();
+    });
+
+    /* ── enable/disable submit button ─────────────────────────── */
+    function updateSubmitState() {
+      const nameOk = nameInput.value.trim().length > 0;
+      const emailOk = EMAIL_RE.test(emailInput.value.trim());
+      const pwOk = allRulesMet(pwInput.value);
+      const matchOk = pwInput.value === confirmInput.value && confirmInput.value.length > 0;
+      document.getElementById("submit-btn").disabled = !(nameOk && emailOk && pwOk && matchOk);
+    }
+
+    /* ── form submit ───────────────────────────────────────────── */
+    const form = document.getElementById("register-form");
+    const submitBtn = document.getElementById("submit-btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const password = pwInput.value;
+      const confirm_password = confirmInput.value;
+
+      // Final client-side guard
+      if (!name) { showFieldError("name-error", "Full name is required."); return; }
+      if (!EMAIL_RE.test(email)) { showFieldError("email-error", "Please enter a valid email address."); return; }
+      if (!allRulesMet(password)) { return; }
+      if (password !== confirm_password) { showFieldError("match-error", "Passwords do not match."); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner"></span> Creating account…`;
+      try {
+        await Api.registerAdmin({ name, email, password, confirm_password });
+        showToast("Admin account created. Please log in.", "success");
+        setTimeout(() => (window.location.href = "admin-login.html"), 900);
+      } catch (err) {
+        // Show backend validation errors inline when possible
+        const msg = err && err.message ? err.message : "Registration failed.";
+        if (msg.toLowerCase().includes("email")) {
+          showFieldError("email-error", msg);
+        } else if (msg.toLowerCase().includes("password")) {
+          showFieldError("match-error", msg);
+        } else {
+          showToast(msg, "error");
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Admin Account";
+      }
+    });
+  </script>
 </body>
+
 </html>

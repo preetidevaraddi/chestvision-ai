@@ -1,0 +1,15 @@
+{
+  "architecture": "DenseNet121",
+  "num_classes": 5,
+  "pretrained_imagenet": true,
+  "input_size": 224,
+  "optimizer": "AdamW",
+  "learning_rates": {
+    "early": 1e-05,
+    "later": 3e-05,
+    "classifier": 0.0001
+  },
+  "loss": "CrossEntropyLoss",
+  "max_epochs": 50,
+  "early_stopping_patience": 8
+}

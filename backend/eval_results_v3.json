@@ -1,0 +1,597 @@
+{
+    "accuracy": 0.616580310880829,
+    "macro_precision": 0.5556183656805477,
+    "macro_recall": 0.4922146160962072,
+    "macro_f1": 0.4903375239384036,
+    "per_class": {
+        "COVID-19": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+        },
+        "Nodule": {
+            "precision": 1.0,
+            "recall": 0.36,
+            "f1": 0.5294117647058824
+        },
+        "Normal": {
+            "precision": 0.47540983606557374,
+            "recall": 0.6304347826086957,
+            "f1": 0.5420560747663551
+        },
+        "Pneumonia": {
+            "precision": 0.8888888888888888,
+            "recall": 0.96,
+            "f1": 0.9230769230769231
+        },
+        "Tuberculosis": {
+            "precision": 0.41379310344827586,
+            "recall": 0.5106382978723404,
+            "f1": 0.45714285714285713
+        }
+    },
+    "confusion_matrix": [
+        [
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            18,
+            10,
+            0,
+            22
+        ],
+        [
+            0,
+            0,
+            29,
+            5,
+            12
+        ],
+        [
+            0,
+            0,
+            2,
+            48,
+            0
+        ],
+        [
+            2,
+            0,
+            20,
+            1,
+            24
+        ]
+    ],
+    "cm_labels": [
+        "COVID-19",
+        "Nodule",
+        "Normal",
+        "Pneumonia",
+        "Tuberculosis"
+    ],
+    "failures": [
+        {
+            "filename": "Tuberculosis_0200.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.40208756923675537,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0206.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.5315864682197571,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0207.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.471034973859787,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0209.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.538545548915863,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0210.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.43780264258384705,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0211.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.5486730337142944,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0214.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.5795741081237793,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0215.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.39090678095817566,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0218.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.40203842520713806,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0219.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.6295278668403625,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0221.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "COVID-19",
+            "confidence": 0.3536410331726074,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0225.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.45214828848838806,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0227.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.41654160618782043,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0228.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.4278651177883148,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0229.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.4597538411617279,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0231.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.40920838713645935,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0235.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.5640442371368408,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0236.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.5017104744911194,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0237.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.5210112929344177,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0239.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.4227801263332367,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0241.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.46695974469184875,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0243.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "COVID-19",
+            "confidence": 0.37274080514907837,
+            "source": "unknown"
+        },
+        {
+            "filename": "Tuberculosis_0246.png",
+            "true_class": "Tuberculosis",
+            "predicted_class": "Normal",
+            "confidence": 0.46411800384521484,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0199.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.46915778517723083,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0200.png",
+            "true_class": "Normal",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.8795103430747986,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0201.png",
+            "true_class": "Normal",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.4787018895149231,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0202.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4685978293418884,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0203.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.45733267068862915,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0207.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4346013367176056,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0211.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.5534785985946655,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0212.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4103548228740692,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0213.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.45202043652534485,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0218.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.5592250227928162,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0223.png",
+            "true_class": "Normal",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.9378467798233032,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0232.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3336285948753357,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0234.png",
+            "true_class": "Normal",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.8799200654029846,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0237.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.40406474471092224,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0240.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.5626401901245117,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0243.png",
+            "true_class": "Normal",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.46859145164489746,
+            "source": "unknown"
+        },
+        {
+            "filename": "Normal_0245.png",
+            "true_class": "Normal",
+            "predicted_class": "Pneumonia",
+            "confidence": 0.9170482158660889,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0196.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3920005261898041,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0198.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.5309662222862244,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0199.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4173012971878052,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0200.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.3964778482913971,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0201.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3878152370452881,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0203.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.32805007696151733,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0204.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4188896417617798,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0205.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.4461107552051544,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0206.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.486243337392807,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0208.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3844852149486542,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0209.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4068625867366791,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0210.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.43732380867004395,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0211.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.48895198106765747,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0212.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.5144681334495544,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0214.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.4281505346298218,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0216.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.31144529581069946,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0217.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3370511829853058,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0218.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.3886801302433014,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0221.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.42282092571258545,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0222.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.40981486439704895,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0223.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3687734007835388,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0225.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.5367802977561951,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0226.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.38078391551971436,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0227.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3458816707134247,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0228.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.3262180984020233,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0231.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.43218281865119934,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0232.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.4367070496082306,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0234.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.32420819997787476,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0238.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.3549993932247162,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0239.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.34321165084838867,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0241.png",
+            "true_class": "Nodule",
+            "predicted_class": "Normal",
+            "confidence": 0.42134207487106323,
+            "source": "unknown"
+        },
+        {
+            "filename": "Nodule_0242.png",
+            "true_class": "Nodule",
+            "predicted_class": "Tuberculosis",
+            "confidence": 0.45975595712661743,
+            "source": "unknown"
+        },
+        {
+            "filename": "Pneumonia_0201.jpeg",
+            "true_class": "Pneumonia",
+            "predicted_class": "Normal",
+            "confidence": 0.48863306641578674,
+            "source": "unknown"
+        },
+        {
+            "filename": "Pneumonia_0238.jpeg",
+            "true_class": "Pneumonia",
+            "predicted_class": "Normal",
+            "confidence": 0.4142758846282959,
+            "source": "unknown"
+        }
+    ]
+}
