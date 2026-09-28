@@ -20,6 +20,12 @@ class GenderEnum(str, enum.Enum):
     other = "other"
 
 
+class ReportStatus(str, enum.Enum):
+    pending = "pending"
+    viewed = "viewed"
+    review = "review"
+
+
 class UncertaintyStatus(str, enum.Enum):
     high_confidence = "High Confidence"
     moderate_confidence = "Moderate Confidence"
@@ -117,5 +123,6 @@ class Report(Base):
     report_path = Column(String(1000), nullable=False)  # generated PDF path
     generated_by_id = Column(String(36), ForeignKey("admins.admin_id"))
     generated_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(Enum(ReportStatus), nullable=False, default=ReportStatus.pending)
 
     analysis_result = relationship("AnalysisResult", back_populates="report")

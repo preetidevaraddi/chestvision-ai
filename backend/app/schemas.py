@@ -122,6 +122,11 @@ class ReportOut(BaseModel):
     analysis_result_id: str
     report_path: str
     generated_at: datetime
+    status: str = "pending"
 
     class Config:
         from_attributes = True
+
+
+class ReportStatusUpdate(BaseModel):
+    status: str

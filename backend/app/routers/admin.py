@@ -313,6 +313,11 @@ def generate_report(result_id: str, db: Session = Depends(get_db), admin: Admin 
     analysis = db.query(AnalysisResult).filter(AnalysisResult.result_id == result_id).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis result not found")
+        
+    existing_report = db.query(Report).filter(Report.analysis_result_id == result_id).first()
+    if existing_report:
+        return existing_report
+
     xray = db.query(XrayImage).filter(XrayImage.image_id == analysis.image_id).first()
     patient = db.query(Patient).filter(Patient.patient_id == xray.patient_id).first()
 

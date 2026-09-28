@@ -5,8 +5,8 @@ from sqlalchemy import func
 
 from app.database import get_db
 from app.dependencies import require_doctor
-from app.models import Doctor, Patient, XrayImage, AnalysisResult, Report
-from app.schemas import PatientOut, AnalysisResultOut, ReportOut
+from app.models import Doctor, Patient, XrayImage, AnalysisResult, Report, ReportStatus
+from app.schemas import PatientOut, AnalysisResultOut, ReportOut, ReportStatusUpdate
 
 router = APIRouter(prefix="/api/doctor", tags=["doctor"])
 
@@ -23,18 +23,51 @@ def dashboard(db: Session = Depends(get_db), doctor: Doctor = Depends(require_do
         AnalysisResult.priority.in_(["Urgent", "High"])
     ).scalar()
     recent_reports = db.query(Report).order_by(Report.generated_at.desc()).limit(10).all()
+    
+    recent_reports_out = []
+    for r in recent_reports:
+        a = db.query(AnalysisResult).filter(AnalysisResult.result_id == r.analysis_result_id).first()
+        x = db.query(XrayImage).filter(XrayImage.image_id == a.image_id).first()
+        p = db.query(Patient).filter(Patient.patient_id == x.patient_id).first()
+        
+        recent_reports_out.append({
+            "report_id": r.report_id,
+            "patient_name": p.name,
+            "patient_id": p.patient_id,
+            "predicted_condition": a.top_prediction_label,
+            "confidence": a.top_prediction_confidence,
+            "priority": a.priority.value if hasattr(a.priority, "value") else a.priority,
+            "status": r.status.value if hasattr(r.status, "value") else r.status,
+            "generated_at": r.generated_at
+        })
+
     return {
         "total_reports": total_reports,
         "priority_cases": priority_cases,
-        "recent_reports": [
-            {"report_id": r.report_id, "generated_at": r.generated_at} for r in recent_reports
-        ],
+        "recent_reports": recent_reports_out,
     }
 
 
-@router.get("/reports", response_model=list[ReportOut])
+@router.get("/reports")
 def list_reports(db: Session = Depends(get_db), doctor: Doctor = Depends(require_doctor)):
-    return db.query(Report).order_by(Report.generated_at.desc()).all()
+    reports = db.query(Report).order_by(Report.generated_at.desc()).all()
+    out = []
+    for r in reports:
+        a = db.query(AnalysisResult).filter(AnalysisResult.result_id == r.analysis_result_id).first()
+        x = db.query(XrayImage).filter(XrayImage.image_id == a.image_id).first()
+        p = db.query(Patient).filter(Patient.patient_id == x.patient_id).first()
+        
+        out.append({
+            "report_id": r.report_id,
+            "patient_name": p.name,
+            "patient_id": p.patient_id,
+            "predicted_condition": a.top_prediction_label,
+            "confidence": a.top_prediction_confidence,
+            "priority": a.priority.value if hasattr(a.priority, "value") else a.priority,
+            "status": r.status.value if hasattr(r.status, "value") else r.status,
+            "generated_at": r.generated_at
+        })
+    return out
 
 
 @router.get("/reports/{report_id}")
@@ -76,3 +109,24 @@ def view_patient(patient_id: str, db: Session = Depends(get_db), doctor: Doctor 
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+
+@router.patch("/reports/{report_id}/status")
+def update_report_status(report_id: str, payload: ReportStatusUpdate, db: Session = Depends(get_db), doctor: Doctor = Depends(require_doctor)):
+    report = db.query(Report).filter(Report.report_id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    valid_statuses = ["pending", "viewed", "review"]
+    if payload.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    try:
+        status_enum = ReportStatus(payload.status)
+        report.status = status_enum
+        db.commit()
+        db.refresh(report)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid status value")
+        
+    return {"status": report.status.value if hasattr(report.status, "value") else report.status}

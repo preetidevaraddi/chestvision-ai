@@ -123,6 +123,7 @@ const Api = {
   doctorListReports: () => apiRequest("/api/doctor/reports"),
   doctorGetReport: (reportId) => apiRequest(`/api/doctor/reports/${reportId}`),
   doctorGetPatient: (id) => apiRequest(`/api/doctor/patients/${id}`),
+  doctorUpdateReportStatus: (reportId, payload) => apiRequest(`/api/doctor/reports/${reportId}/status`, { method: "PATCH", body: payload }),
 };
 
 /** Resolves a backend-relative filesystem path (e.g. .../uploads/x.png) to a servable URL. */

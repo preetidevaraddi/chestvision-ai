@@ -30,9 +30,15 @@
       wrap.innerHTML = `
         ${a.is_demo_model ? `<div class="alert alert-demo"><strong>DEMO MODE:</strong> ${escapeHtml(a.disclaimer)}</div>` : `<div class="alert alert-info">${escapeHtml(a.disclaimer)}</div>`}
 
-        <div class="flex-between mb-16">
-          <div class="text-muted mono" style="font-size:12.5px;">Report ID: ${r.report_id}</div>
-          <a href="${fileUrl(r.report_path)}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
+        <div class="flex-between mb-16" style="align-items: center;">
+          <div>
+            <div class="text-muted mono" style="font-size:12.5px;">Report ID: ${r.report_id}</div>
+            <div id="status-container" style="margin-top: 4px;"></div>
+          </div>
+          <div>
+            <button id="btn-review" class="btn btn-outline btn-sm" style="margin-right:8px;"></button>
+            <a href="${fileUrl(r.report_path)}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
+          </div>
         </div>
 
         <div class="card mb-16">
@@ -93,6 +99,52 @@
       `;
 
       document.getElementById("gauge-list").innerHTML = gaugeListHtml(a.predicted_conditions, 14);
+
+      // Handle status logic
+      let currentStatus = r.status;
+      const statusContainer = document.getElementById("status-container");
+      const btnReview = document.getElementById("btn-review");
+
+      function updateStatusUI() {
+          if (currentStatus === "pending") {
+              statusContainer.innerHTML = `<span class="badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba">Pending</span>`;
+          } else if (currentStatus === "review") {
+              statusContainer.innerHTML = `<span class="badge badge-review"><span class="badge-dot"></span>Marked for Review</span>`;
+              btnReview.textContent = "Remove from Review";
+          } else {
+              statusContainer.innerHTML = `<span class="badge badge-normal">Viewed</span>`;
+              btnReview.textContent = "Mark for Review";
+          }
+      }
+      
+      updateStatusUI();
+
+      if (currentStatus === "pending") {
+          // Auto update to viewed since report was successfully opened
+          try {
+              await Api.doctorUpdateReportStatus(reportId, { status: "viewed" });
+              currentStatus = "viewed";
+              updateStatusUI();
+          } catch (e) {
+              console.error("Failed to update status to viewed", e);
+          }
+      }
+
+      btnReview.addEventListener("click", async () => {
+          const newStatus = currentStatus === "review" ? "viewed" : "review";
+          btnReview.disabled = true;
+          try {
+              await Api.doctorUpdateReportStatus(reportId, { status: newStatus });
+              currentStatus = newStatus;
+              updateStatusUI();
+              showToast(newStatus === "review" ? "Report marked for review" : "Report removed from review", "success");
+          } catch (err) {
+              apiErrorToast(err, "Could not update status.");
+          } finally {
+              btnReview.disabled = false;
+          }
+      });
+      
     } catch (err) {
       apiErrorToast(err, "Could not load report.");
     }
