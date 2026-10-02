@@ -11,6 +11,38 @@ import cv2
 
 from app.core.config import settings
 
+def create_lung_mask(img_gray: np.ndarray) -> np.ndarray:
+    """Create a lightweight lung-region mask using Otsu thresholding and contour filtering."""
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(img_gray)
+    
+    blur = cv2.GaussianBlur(enhanced, (5,5), 0)
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    mask = np.zeros_like(img_gray)
+    h, w = img_gray.shape
+    
+    for cnt in contours:
+        x, y, w_bb, h_bb = cv2.boundingRect(cnt)
+        area = cv2.contourArea(cnt)
+        
+        margin = int(w * 0.02)
+        touching_edge = (x <= margin) or (y <= margin) or ((x + w_bb) >= w - margin) or ((y + h_bb) >= h - margin)
+        
+        if area > (h * w) * 0.015 and not touching_edge:
+            cv2.drawContours(mask, [cnt], -1, 1, thickness=cv2.FILLED)
+            
+    if np.sum(mask) == 0:
+        # Fallback to a central bounding box if heuristics fail
+        cv2.rectangle(mask, (int(w*0.15), int(h*0.15)), (int(w*0.85), int(h*0.85)), 1, thickness=cv2.FILLED)
+        
+    # Smooth the mask for a natural blend
+    mask = cv2.GaussianBlur(mask.astype(np.float32), (31, 31), 0)
+    mask = np.clip(mask, 0, 1)
+    
+    return mask
 
 class GradCAM:
     def __init__(self, model, target_layer):
@@ -59,12 +91,6 @@ class GradCAM:
         if heatmap_max > 0:
             heatmap /= heatmap_max
             
-        # 8. Heatmap sharpening & thresholding
-        heatmap = heatmap ** 2
-        
-        # Threshold to remove weak activations
-        heatmap[heatmap < 0.3] = 0
-            
         return heatmap
 
 def save_overlay(original_image_path: str, heatmap: np.ndarray, output_path: str) -> str:
@@ -74,55 +100,29 @@ def save_overlay(original_image_path: str, heatmap: np.ndarray, output_path: str
     img_arr = np.array(img)
 
     # 9. Resizing/interpolation (using INTER_LINEAR or INTER_CUBIC)
-    # Clip to [0, 1] after resize to handle overshoot from cubic interpolation
     heatmap_resized = cv2.resize(heatmap, (original_w, original_h), interpolation=cv2.INTER_CUBIC)
     heatmap_resized = np.clip(heatmap_resized, 0, 1)
 
-    # --- CONNECTED COMPONENT ANALYSIS & FILTERING ---
-    # Create a binary mask to identify high-activation regions
-    binary_mask = (heatmap_resized > 0.1).astype(np.uint8) * 255
-    
-    # Find contours
-    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    
-    # Filter out small/noisy regions (e.g., ignore regions with very small area)
-    min_area = (original_w * original_h) * 0.015  # 1.5% of total area
-    valid_contours = []
-    clean_mask = np.zeros((original_h, original_w), dtype=np.uint8)
-    
-    for contour in contours:
-        if cv2.contourArea(contour) > min_area:
-            valid_contours.append(contour)
-            cv2.drawContours(clean_mask, [contour], -1, 1, thickness=cv2.FILLED)
-            
-    # Apply the mask to eliminate random spots in background/corners
-    heatmap_cleaned = heatmap_resized * clean_mask
-    
-    # Re-normalize so the valid regions represent full high activation (red/yellow)
+    # 10. Apply Lung Mask to strictly restrict heatmap to anatomical lungs
+    gray_img = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
+    lung_mask = create_lung_mask(gray_img)
+    heatmap_cleaned = heatmap_resized * lung_mask
+
+    # Re-normalize after lung masking to ensure highest activation is bright red
     max_val = np.max(heatmap_cleaned)
     if max_val > 0:
         heatmap_cleaned = heatmap_cleaned / max_val
 
-    # 10. Final overlay with original X-ray
+    # 11. Final overlay with original X-ray
     heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_cleaned), cv2.COLORMAP_JET)
     heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
 
     # Alpha masking: opacity is proportional to activation intensity.
-    alpha_mask = heatmap_cleaned[..., np.newaxis] * 0.50
+    # Set a maximum opacity so it doesn't completely block the X-ray
+    alpha_mask = heatmap_cleaned[..., np.newaxis] * 0.55
+    
+    # Where heatmap is 0, alpha is 0, so the original X-ray is preserved perfectly.
     overlay = np.uint8(img_arr * (1 - alpha_mask) + heatmap_color * alpha_mask)
-    
-    # --- ADD DASHED BLACK OUTLINE ---
-    dash_length = 15
-    gap_length = 15
-    thickness = 3
-    
-    for contour in valid_contours:
-        N = len(contour)
-        for i in range(0, N, dash_length + gap_length):
-            end = min(i + dash_length, N)
-            segment = contour[i:end]
-            if len(segment) > 1:
-                cv2.polylines(overlay, [segment], isClosed=False, color=(0, 0, 0), thickness=thickness)
     
     Image.fromarray(overlay).save(output_path)
     return output_path

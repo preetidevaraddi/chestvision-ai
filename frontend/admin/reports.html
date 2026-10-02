@@ -8,11 +8,14 @@
 </head>
 <body>
 <div id="app-shell-root">
+  <div class="flex-between mb-16">
+    <input type="search" id="search-input" placeholder="Search by name or patient ID…" style="max-width:320px;">
+  </div>
   <div class="card">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Report ID</th><th>Generated</th><th></th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="3"><div class="skeleton" style="height:18px;"></div></td></tr></tbody>
+        <thead><tr><th>Patient ID</th><th>Patient Name</th><th>Result</th><th>Confidence</th><th>Priority</th><th>Generated</th><th></th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="8"><div class="skeleton" style="height:18px;"></div></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -22,28 +25,49 @@
 <script src="../js/ui.js"></script>
 <script>
   Auth.requireRole("admin");
-  renderShell({ role: "admin", pageTitle: "Reports", pageSub: "All generated AI analysis reports" });
+  renderShell({ role: "admin", pageTitle: "Reports"});
+
+  let allReports = [];
+  const tbody = document.getElementById("tbody");
+  const searchInput = document.getElementById("search-input");
+
+  function renderTable(reports) {
+    if (!reports.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No reports found.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = reports
+      .map(
+        (r) => `<tr>
+          <td class="mono">${r.patient_display_id || r.patient_id || ''}</td>
+          <td>${escapeHtml(r.patient_name || "Unknown")}</td>
+          
+          <td>${escapeHtml(r.top_prediction_label || "—")}</td>
+          <td class="mono">${r.top_prediction_confidence ? Math.round(r.top_prediction_confidence * 100) + '%' : "—"}</td>
+          <td>${r.priority ? statusBadgeHtml(r.priority) : "—"}</td>
+          <td class="text-muted">${formatDate(r.generated_at)}</td>
+          <td><a href="report-view.html?report_id=${r.report_id}" class="btn btn-outline btn-sm">View</a></td>
+        </tr>`
+      )
+      .join("");
+  }
+
+  searchInput.addEventListener("input", () => {
+    const term = searchInput.value.toLowerCase();
+    const filtered = allReports.filter(r => 
+      (r.patient_name || "").toLowerCase().includes(term) ||
+      (r.patient_display_id || "").includes(term)
+    );
+    renderTable(filtered);
+  });
 
   (async () => {
-    const tbody = document.getElementById("tbody");
     try {
-      const reports = await Api.listReports();
-      if (!reports.length) {
-        tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state">No reports generated yet.</div></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = reports
-        .map(
-          (r) => `<tr>
-            <td class="mono">${r.report_id.slice(0, 8)}</td>
-            <td class="text-muted">${formatDate(r.generated_at)}</td>
-            <td><a href="report-view.html?report_id=${r.report_id}" class="btn btn-outline btn-sm">View</a></td>
-          </tr>`
-        )
-        .join("");
+      allReports = await Api.listReports();
+      renderTable(allReports);
     } catch (err) {
       apiErrorToast(err, "Could not load reports.");
-      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state">Failed to load.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">Failed to load.</div></td></tr>`;
     }
   })();
 </script>

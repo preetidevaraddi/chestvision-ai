@@ -10,18 +10,18 @@
 <div id="app-shell-root">
   <div class="stat-grid" id="stat-grid">
     <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div>
-    <div class="stat-card"><div class="stat-label">Total X-Ray Analyses</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div>
+    <!-- <div class="stat-card"><div class="stat-label">Total X-Ray Analyses</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div>
     <div class="stat-card"><div class="stat-label">Total Reports</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div>
-    <div class="stat-card"><div class="stat-label">Priority Cases</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div>
+    <div class="stat-card"><div class="stat-label">Priority Cases</div><div class="stat-value skeleton" style="height:30px; width:50px;"></div></div> -->
   </div>
 
   <h2 class="section-title">Recent X-Ray Analyses</h2>
   <div class="card">
     <div class="table-wrap">
       <table id="recent-table">
-        <thead><tr><th>Result ID</th><th>Predicted Condition</th><th>Confidence</th><th>Priority</th><th>Analyzed</th></tr></thead>
+        <thead><tr><th>Patient ID</th><th>Patient Name</th><th>Predicted Condition</th><th>Confidence</th><th>Priority</th><th>Analyzed</th></tr></thead>
         <tbody id="recent-tbody">
-          <tr><td colspan="5"><div class="skeleton" style="height:18px;"></div></td></tr>
+          <tr><td colspan="7"><div class="skeleton" style="height:18px;"></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -32,7 +32,7 @@
 <script src="../js/ui.js"></script>
 <script>
   Auth.requireRole("admin");
-  renderShell({ role: "admin", pageTitle: "Dashboard", pageSub: "Overview of patients, analyses, and reports" });
+  renderShell({ role: "admin", pageTitle: "Dashboard" });
 
   (async () => {
     try {
@@ -40,20 +40,22 @@
       const statGrid = document.getElementById("stat-grid");
       statGrid.innerHTML = `
         <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value">${data.total_patients}</div></div>
-        <div class="stat-card"><div class="stat-label">Total X-Ray Analyses</div><div class="stat-value">${data.total_analyses}</div></div>
+         <!-- <div class="stat-card"><div class="stat-label">Total X-Ray Analyses</div><div class="stat-value">${data.total_analyses}</div></div>
         <div class="stat-card"><div class="stat-label">Total Reports</div><div class="stat-value">${data.total_reports}</div></div>
-        <div class="stat-card"><div class="stat-label">Priority Cases</div><div class="stat-value">${data.priority_cases}</div></div>
+        <div class="stat-card"><div class="stat-label">Priority Cases</div><div class="stat-value">${data.priority_cases}</div></div> -->
       `;
 
       const tbody = document.getElementById("recent-tbody");
       if (!data.recent_analyses.length) {
-        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No analyses yet. Upload an X-ray to get started.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No analyses yet. Upload an X-ray to get started.</div></td></tr>`;
         return;
       }
       tbody.innerHTML = data.recent_analyses
         .map(
           (r) => `<tr>
-            <td class="mono">${r.result_id.slice(0, 8)}</td>
+            <td class="mono">${r.patient_display_id || ''}</td>
+            <td>${escapeHtml(r.patient_name || "Unknown")}</td>
+            
             <td>${escapeHtml(r.top_prediction_label)}</td>
             <td class="mono">${Math.round(r.top_prediction_confidence * 100)}%</td>
             <td>${statusBadgeHtml(r.priority)}</td>

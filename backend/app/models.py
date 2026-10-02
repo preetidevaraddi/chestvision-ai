@@ -13,6 +13,10 @@ from app.database import Base
 def gen_uuid() -> str:
     return str(uuid.uuid4())
 
+import random
+def gen_display_id() -> str:
+    return str(random.randint(10000, 99999))
+
 
 class GenderEnum(str, enum.Enum):
     male = "male"
@@ -64,6 +68,7 @@ class Patient(Base):
     __tablename__ = "patients"
 
     patient_id = Column(String(36), primary_key=True, default=gen_uuid)
+    patient_display_id = Column(String(10), unique=True, index=True, default=gen_display_id)
     name = Column(String(255), nullable=False)
     age = Column(Integer, nullable=False)
     gender = Column(Enum(GenderEnum), nullable=False)
@@ -95,6 +100,7 @@ class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
     result_id = Column(String(36), primary_key=True, default=gen_uuid)
+    result_display_id = Column(String(10), unique=True, index=True, default=gen_display_id)
     image_id = Column(String(36), ForeignKey("xray_images.image_id"), nullable=False)
 
     # Predicted conditions stored as JSON text: [{"label": "...", "confidence": 0.92}, ...]
@@ -119,6 +125,7 @@ class Report(Base):
     __tablename__ = "reports"
 
     report_id = Column(String(36), primary_key=True, default=gen_uuid)
+    report_display_id = Column(String(10), unique=True, index=True, default=gen_display_id)
     analysis_result_id = Column(String(36), ForeignKey("analysis_results.result_id"), nullable=False)
     report_path = Column(String(1000), nullable=False)  # generated PDF path
     generated_by_id = Column(String(36), ForeignKey("admins.admin_id"))

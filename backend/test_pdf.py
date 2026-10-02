@@ -3,17 +3,17 @@ from collections import namedtuple
 from app.utils.report_generator import generate_report_pdf
 
 def test_pdf():
-    Patient = namedtuple('Patient', ['patient_id', 'name', 'age', 'gender'])
+    Patient = namedtuple('Patient', ['patient_display_id', 'name', 'age', 'gender'])
     XrayImage = namedtuple('XrayImage', ['image_id', 'uploaded_at', 'image_path'])
     AnalysisResult = namedtuple('AnalysisResult', ['predicted_conditions', 'top_prediction_label', 
                                                    'top_prediction_confidence', 'uncertainty_status', 
                                                    'priority', 'heatmap_path', 'is_demo_model'])
                                                    
-    patient = Patient(patient_id="P1", name="Test", age=30, gender="Male")
+    patient = Patient(patient_display_id="P1", name="Test", age=30, gender="Male")
     
     import datetime
     
-    heatmap_actual = r"C:\Users\Preeti Devaraddi\Documents\chestvision-ai-copy\backend\uploads\heatmap_954d4a678a0e461c9363e2c7ee2cdf90.png"
+    heatmap_actual = "heatmap_test_Normal_0000.png"
     
     xray = XrayImage(image_id="X1", uploaded_at=datetime.datetime.now(), 
                      image_path=heatmap_actual)

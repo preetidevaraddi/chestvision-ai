@@ -27,7 +27,6 @@
       <table>
         <thead>
           <tr>
-            <th>Report ID</th>
             <th>Patient Name</th>
             <th>Patient ID</th>
             <th>Predicted Condition</th>
@@ -38,24 +37,24 @@
             <th></th>
           </tr>
         </thead>
-        <tbody id="tbody"><tr><td colspan="9"><div class="skeleton" style="height:18px;"></div></td></tr></tbody>
+        <tbody id="tbody"><tr><td colspan="8"><div class="skeleton" style="height:18px;"></div></td></tr></tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
-<script src="../js/ui.js"></script>
+<script src="../js/ui.js?v=3"></script>
 <script>
   Auth.requireRole("doctor");
-  renderShell({ role: "doctor", pageTitle: "Dashboard", pageSub: "Read-only overview of patient reports" });
+  renderShell({ role: "doctor", pageTitle: "Dashboard"});
 
   let allReports = [];
   
   function renderReports(reports) {
       const tbody = document.getElementById("tbody");
       if (!reports.length) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No reports available yet.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No reports available yet.</div></td></tr>`;
         return;
       }
       tbody.innerHTML = reports
@@ -70,9 +69,8 @@
                 statusBadge = `<span class="badge badge-normal">Viewed</span>`;
             }
             return `<tr>
-            <td class="mono">${r.report_id.slice(0, 8)}</td>
             <td>${escapeHtml(r.patient_name)}</td>
-            <td class="mono">${r.patient_id}</td>
+            <td class="mono">${r.patient_display_id || r.patient_id}</td>
             <td>${escapeHtml(r.predicted_condition)}</td>
             <td>${Math.round(r.confidence * 100)}%</td>
             <td>${statusBadgeHtml(r.priority)}</td>

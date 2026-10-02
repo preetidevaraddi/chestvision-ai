@@ -26,12 +26,12 @@
       const r = await Api.getReport(reportId);
       const a = r.analysis;
       const p = r.patient;
+      const isOod = a.top_prediction_label === "Unknown / Outside Training Classes";
 
       wrap.innerHTML = `
         ${a.is_demo_model ? `<div class="alert alert-demo"><strong>DEMO MODE:</strong> ${escapeHtml(a.disclaimer)}</div>` : `<div class="alert alert-info">${escapeHtml(a.disclaimer)}</div>`}
 
-        <div class="flex-between mb-16">
-          <div class="text-muted mono" style="font-size:12.5px;">Report ID: ${r.report_id}</div>
+        <div class="flex-between mb-16" style="justify-content: flex-end;">
           <a href="${fileUrl(r.report_path)}" target="_blank" class="btn btn-primary btn-sm">Download PDF</a>
         </div>
 
@@ -39,13 +39,18 @@
           <h3 class="mb-16">Patient Information</h3>
           <div class="form-row">
             <div><label>Name</label><div>${escapeHtml(p.name)}</div></div>
-            <div><label>Patient ID</label><div class="mono">${p.patient_id}</div></div>
+            <div><label>Patient ID</label><div class="mono">${p.patient_display_id || p.patient_id}</div></div>
           </div>
           <div class="form-row mt-16">
             <div><label>Age</label><div>${p.age}</div></div>
             <div><label>Gender</label><div style="text-transform:capitalize;">${p.gender}</div></div>
           </div>
         </div>
+        
+        ${isOod ? `
+        <div class="alert mb-16" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">
+          <strong>⚠ Warning:</strong> This model was trained only on Normal, Pneumonia, COVID-19, and Tuberculosis. The uploaded X-ray may contain a condition outside these training classes, so a specific disease prediction cannot be provided reliably.
+        </div>` : ""}
 
         <div class="flex" style="gap:16px; flex-wrap:wrap;">
           <div class="card" style="flex:1; min-width:300px;">
@@ -67,22 +72,17 @@
                 a.heatmap_path
                   ? `<div style="flex:1;">
                        <div class="preview-frame"><img src="${fileUrl(a.heatmap_path)}" alt="Heatmap"></div>
-                       <div class="text-muted mt-8" style="font-size:11.5px; text-align:center;">AI-highlighted regions</div>
+                       <div class="text-muted mt-8" style="font-size:11.5px; text-align:center;">${isOod ? 'Model Attention Visualization — Not a Diagnostic Finding' : 'AI-highlighted regions'}</div>
                      </div>`
-                  : ""
+                  : `<div style="flex:1;">
+                       <div class="preview-frame"><img src="${fileUrl(r.xray_image_path)}" alt="Original X-ray"></div>
+                       <div class="text-muted mt-8" style="font-size:11.5px; text-align:center;">No abnormal region detected</div>
+                     </div>`
               }
             </div>
           </div>
         </div>
-
-        <div class="card mt-16">
-          <h3 class="mb-8">Disclaimer</h3>
-          <p class="text-muted" style="font-size:13px;">
-            This AI-assisted report is intended for decision support and should not be considered a
-            final medical diagnosis or a replacement for professional medical evaluation. This is an
-            academic final-year project prototype.
-          </p>
-        </div>
+      
       `;
 
       document.getElementById("gauge-list").innerHTML = gaugeListHtml(a.predicted_conditions, 14);

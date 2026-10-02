@@ -6,31 +6,199 @@
 <title>Profile — ChestVision AI</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 <div id="app-shell-root">
-  <div class="card" style="max-width:480px;">
-    <div class="flex-gap mb-16">
-      <div style="width:48px; height:48px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:18px;" id="avatar"></div>
-      <div>
-        <h3 class="mb-0" id="profile-name"></h3>
-        <span class="role-pill">Doctor</span>
+
+  <div class="card profile-card">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-avatar" id="avatar"></div>
+
+      <div class="profile-title">
+        <h2 id="profile-name">Doctor</h2>
+        <span class="role-pill">DOCTOR</span>
       </div>
     </div>
-    <div class="text-muted" style="font-size:13.5px;">
-      Signed in as a doctor on ChestVision AI. Doctors have read-only access to patient records and
-      AI-assisted analysis reports — uploads, edits, and analysis are managed by Admin.
+
+    <!-- Profile Information -->
+    <div class="profile-section">
+      <h3>Profile Information</h3>
+
+      <div class="profile-info-grid">
+
+        <div class="profile-info-item">
+          <span class="profile-label">Name</span>
+          <span class="profile-value" id="profile-name-info"></span>
+        </div>
+
+        <div class="profile-info-item">
+          <span class="profile-label">Role</span>
+          <span class="profile-value">Doctor</span>
+        </div>
+
+        <div class="profile-info-item">
+          <span class="profile-label">System</span>
+          <span class="profile-value">ChestVision AI</span>
+        </div>
+
+        <div class="profile-info-item">
+          <span class="profile-label">Access</span>
+          <span class="profile-value">Doctor Console</span>
+        </div>
+
+      </div>
     </div>
+
+    <!-- Doctor Access -->
+   
+
   </div>
+
 </div>
 
 <script src="../js/api.js"></script>
-<script src="../js/ui.js"></script>
+<script src="../js/ui.js?v=3"></script>
+
 <script>
   Auth.requireRole("doctor");
-  renderShell({ role: "doctor", pageTitle: "Profile" });
+
+  renderShell({
+    role: "doctor",
+    pageTitle: "Profile",
+    pageSub: "View your doctor profile"
+  });
+
   const name = Auth.getName() || "Doctor";
+  // Display name
   document.getElementById("profile-name").textContent = name;
-  document.getElementById("avatar").textContent = name.charAt(0).toUpperCase();
+  document.getElementById("profile-name-info").textContent = name;
+
+  // Avatar
+  document.getElementById("avatar").textContent =
+    name.charAt(0).toUpperCase();
 </script>
+
+<style>
+  .profile-card {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #dce7ec;
+  }
+
+  .profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .profile-title h2 {
+    margin: 0 0 8px 0;
+    font-size: 25px;
+  }
+
+  .profile-section {
+    margin-top: 30px;
+  }
+
+  .profile-section h3 {
+    margin-bottom: 20px;
+    font-size: 19px;
+  }
+
+  .profile-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .profile-info-item {
+    padding: 16px;
+    background: #f7fafc;
+    border: 1px solid #e0e9ee;
+    border-radius: 10px;
+  }
+
+  .profile-label {
+    display: block;
+    font-size: 13px;
+    color: #6b7d87;
+    margin-bottom: 7px;
+  }
+
+  .profile-value {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #173b52;
+    word-break: break-word;
+  }
+
+  .access-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .access-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 13px 15px;
+    background: #f7fafc;
+    border-radius: 9px;
+
+    color: #29495b;
+    font-size: 14px;
+  }
+
+  .access-icon {
+    width: 23px;
+    height: 23px;
+    min-width: 23px;
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #e1f2ed;
+    color: #20856e;
+
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  @media (max-width: 600px) {
+    .profile-card {
+      padding: 22px;
+    }
+
+    .profile-info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
 </body>
 </html>

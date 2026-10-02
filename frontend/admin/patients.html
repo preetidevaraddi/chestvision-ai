@@ -9,8 +9,8 @@
 <body>
 <div id="app-shell-root">
   <div class="flex-between mb-16">
-    <input type="search" id="search-input" placeholder="Search patients by name or ID…" style="max-width:320px;">
-    <a href="add-patient.html" class="btn btn-primary">+ Add Patient</a>
+    <input type="search" id="search-input" placeholder="Search patients by name…" style="max-width:320px;">
+    
   </div>
 
   <div class="card">
@@ -57,7 +57,7 @@
       tbody.innerHTML = patients
         .map(
           (p) => `<tr>
-            <td class="mono">${p.patient_id.slice(0, 8)}</td>
+            <td class="mono">${p.patient_display_id}</td>
             <td>${escapeHtml(p.name)}</td>
             <td>${p.age}</td>
             <td style="text-transform:capitalize;">${p.gender}</td>

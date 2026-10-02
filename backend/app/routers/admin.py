@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -10,7 +11,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.dependencies import require_admin
 from app.core.config import settings
-from app.models import Admin, Patient, XrayImage, AnalysisResult, Report, GenderEnum
+from app.models import Admin, Patient, XrayImage, AnalysisResult, Report, GenderEnum, ReportStatus
 from app.schemas import PatientCreate, PatientUpdate, PatientOut, AnalysisResultOut, ReportOut, XrayImageOut
 from app.ml.infer import analyze_xray
 from app.ml.preprocessing import validate_image
@@ -43,6 +44,9 @@ def dashboard(db: Session = Depends(get_db), admin: Admin = Depends(require_admi
         "recent_analyses": [
             {
                 "result_id": r.result_id,
+                "result_display_id": r.result_display_id,
+                "patient_name": r.xray_image.patient.name,
+                "patient_display_id": r.xray_image.patient.patient_display_id,
                 "top_prediction_label": r.top_prediction_label,
                 "top_prediction_confidence": r.top_prediction_confidence,
                 "priority": r.priority.value if hasattr(r.priority, "value") else r.priority,
@@ -61,7 +65,14 @@ def add_patient(payload: PatientCreate, db: Session = Depends(get_db), admin: Ad
         gender = GenderEnum(payload.gender.lower())
     except ValueError:
         raise HTTPException(status_code=400, detail="Gender must be male, female, or other")
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_count = db.query(Patient).filter(Patient.created_at >= today_start).count()
+    serial = today_count + 1
+    date_str = datetime.utcnow().strftime("%d%m")
+    patient_display_id = f"{date_str}{serial:02d}"
+
     patient = Patient(
+        patient_display_id=patient_display_id,
         name=payload.name, age=payload.age, gender=gender,
         contact_number=payload.contact_number, address=payload.address,
         registered_by_id=admin.admin_id,
@@ -74,9 +85,10 @@ def add_patient(payload: PatientCreate, db: Session = Depends(get_db), admin: Ad
 
 @router.get("/patients", response_model=list[PatientOut])
 def list_patients(search: str = "", db: Session = Depends(get_db), admin: Admin = Depends(require_admin)):
+    from sqlalchemy import or_
     query = db.query(Patient)
     if search:
-        query = query.filter(Patient.name.ilike(f"%{search}%"))
+        query = query.filter(or_(Patient.name.ilike(f"%{search}%"), Patient.patient_display_id.ilike(f"%{search}%")))
     return query.order_by(Patient.created_at.desc()).all()
 
 
@@ -166,12 +178,14 @@ def list_patient_xrays(patient_id: str, db: Session = Depends(get_db), admin: Ad
             "analyses": [
                 {
                     "result_id": a.result_id,
+                    "result_display_id": a.result_display_id,
                     "top_prediction_label": a.top_prediction_label,
                     "top_prediction_confidence": a.top_prediction_confidence,
                     "priority": a.priority.value if hasattr(a.priority, "value") else a.priority,
                     "is_demo_model": a.is_demo_model,
                     "has_report": a.report is not None,
                     "report_id": a.report.report_id if a.report else None,
+                    "report_display_id": a.report.report_display_id if a.report else None,
                 } for a in analyses
             ],
         })
@@ -247,9 +261,32 @@ def start_analysis(image_id: str, db: Session = Depends(get_db), admin: Admin = 
     db.commit()
     db.refresh(analysis)
 
+    patient = db.query(Patient).filter(Patient.patient_id == xray.patient_id).first()
+    
+    report_filename = f"report_{uuid.uuid4().hex}.pdf"
+    report_path = os.path.join(settings.REPORT_DIR, report_filename)
+    try:
+        generate_report_pdf(patient, xray, analysis, report_path)
+        report = Report(
+            analysis_result_id=analysis.result_id, 
+            report_path=report_path, 
+            generated_by_id=admin.admin_id,
+            status=ReportStatus.pending
+        )
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+    except Exception as e:
+        db.delete(analysis)
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Analysis succeeded but report generation failed: {e}")
+        
     return AnalysisResultOut(
         result_id=analysis.result_id,
+        result_display_id=analysis.result_display_id,
         image_id=analysis.image_id,
+        patient_name=patient.name,
+        patient_display_id=patient.patient_display_id,
         predicted_conditions=result["predicted_conditions"],
         top_prediction_label=analysis.top_prediction_label,
         top_prediction_confidence=analysis.top_prediction_confidence,
@@ -268,7 +305,11 @@ def get_analysis_result(result_id: str, db: Session = Depends(get_db), admin: Ad
     if not r:
         raise HTTPException(status_code=404, detail="Analysis result not found")
     return AnalysisResultOut(
-        result_id=r.result_id, image_id=r.image_id,
+        result_id=r.result_id, 
+        result_display_id=r.result_display_id,
+        image_id=r.image_id,
+        patient_name=r.xray_image.patient.name,
+        patient_display_id=r.xray_image.patient.patient_display_id,
         predicted_conditions=json.loads(r.predicted_conditions),
         top_prediction_label=r.top_prediction_label,
         top_prediction_confidence=r.top_prediction_confidence,
@@ -289,7 +330,11 @@ def analysis_history(db: Session = Depends(get_db), admin: Admin = Depends(requi
     results = db.query(AnalysisResult).order_by(AnalysisResult.analyzed_at.desc()).all()
     return [
         AnalysisResultOut(
-            result_id=r.result_id, image_id=r.image_id,
+            result_id=r.result_id,
+            result_display_id=r.result_display_id,
+            image_id=r.image_id,
+            patient_name=r.xray_image.patient.name,
+            patient_display_id=r.xray_image.patient.patient_display_id,
             predicted_conditions=json.loads(r.predicted_conditions),
             top_prediction_label=r.top_prediction_label,
             top_prediction_confidence=r.top_prediction_confidence,
@@ -334,7 +379,22 @@ def generate_report(result_id: str, db: Session = Depends(get_db), admin: Admin 
 
 @router.get("/reports", response_model=list[ReportOut])
 def list_reports(db: Session = Depends(get_db), admin: Admin = Depends(require_admin)):
-    return db.query(Report).order_by(Report.generated_at.desc()).all()
+    reports = db.query(Report).order_by(Report.generated_at.desc()).all()
+    return [
+        ReportOut(
+            report_id=r.report_id,
+            report_display_id=r.report_display_id,
+            analysis_result_id=r.analysis_result_id,
+            report_path=r.report_path,
+            generated_at=r.generated_at,
+            status=r.status.value if hasattr(r.status, "value") else r.status,
+            patient_name=r.analysis_result.xray_image.patient.name,
+            patient_display_id=r.analysis_result.xray_image.patient.patient_display_id,
+            top_prediction_label=r.analysis_result.top_prediction_label,
+            top_prediction_confidence=r.analysis_result.top_prediction_confidence,
+            priority=r.analysis_result.priority.value if hasattr(r.analysis_result.priority, "value") else r.analysis_result.priority,
+        ) for r in reports
+    ]
 
 
 @router.get("/reports/{report_id}")
@@ -348,12 +408,17 @@ def get_report_detail(report_id: str, db: Session = Depends(get_db), admin: Admi
 
     return {
         "report_id": report.report_id,
+        "report_display_id": report.report_display_id,
         "report_path": report.report_path,
         "generated_at": report.generated_at,
         "patient": PatientOut.model_validate(patient),
         "xray_image_path": xray.image_path,
         "analysis": AnalysisResultOut(
-            result_id=analysis.result_id, image_id=analysis.image_id,
+            result_id=analysis.result_id,
+            result_display_id=analysis.result_display_id,
+            image_id=analysis.image_id,
+            patient_name=patient.name,
+            patient_display_id=patient.patient_display_id,
             predicted_conditions=json.loads(analysis.predicted_conditions),
             top_prediction_label=analysis.top_prediction_label,
             top_prediction_confidence=analysis.top_prediction_confidence,

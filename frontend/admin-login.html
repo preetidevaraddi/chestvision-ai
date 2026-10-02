@@ -92,7 +92,7 @@
     submitBtn.innerHTML = `<span class="spinner"></span> Logging in…`;
     try {
       const resp = await Api.loginAdmin({ email, password });
-      Auth.setSession(resp.access_token, resp.role, resp.name);
+      Auth.setSession(resp.access_token, resp.role, resp.name, resp.email);
       window.location.href = "admin/dashboard.html";
     } catch (err) {
       console.error("Login error:", err);

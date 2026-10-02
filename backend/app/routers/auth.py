@@ -30,7 +30,7 @@ def login_admin(payload: LoginRequest, db: Session = Depends(get_db)):
     if not verify_password(payload.password, admin.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
     token = create_access_token({"sub": admin.admin_id, "role": "admin"})
-    return TokenResponse(access_token=token, role="admin", name=admin.name)
+    return TokenResponse(access_token=token, role="admin", name=admin.name, email=admin.email)
 
 
 # ---------- Doctor ----------
@@ -54,4 +54,4 @@ def login_doctor(payload: LoginRequest, db: Session = Depends(get_db)):
     if not verify_password(payload.password, doctor.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
     token = create_access_token({"sub": doctor.doctor_id, "role": "doctor"})
-    return TokenResponse(access_token=token, role="doctor", name=doctor.name)
+    return TokenResponse(access_token=token, role="doctor", name=doctor.name, email=doctor.email)

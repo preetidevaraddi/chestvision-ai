@@ -15,13 +15,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from app.core.config import settings
 
-DISCLAIMER = (
-    "This AI-assisted report is intended for decision support and should not be "
-    "considered a final medical diagnosis or a replacement for professional "
-    "medical evaluation."
-)
-
-
 def generate_report_pdf(patient, xray_image, analysis_result, output_path: str) -> str:
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("TitleStyle", parent=styles["Title"], textColor=colors.HexColor("#0f4c81"))
@@ -51,7 +44,7 @@ def generate_report_pdf(patient, xray_image, analysis_result, output_path: str) 
 
     story.append(Paragraph("Patient Information", heading_style))
     patient_table = Table([
-        ["Patient ID", patient.patient_id],
+        ["Patient ID", patient.patient_display_id],
         ["Name", patient.name],
         ["Age", str(patient.age)],
         ["Gender", patient.gender.value if hasattr(patient.gender, "value") else str(patient.gender)],
@@ -63,27 +56,41 @@ def generate_report_pdf(patient, xray_image, analysis_result, output_path: str) 
     story.append(patient_table)
     story.append(Spacer(1, 8))
 
-    story.append(Paragraph("X-Ray Information", heading_style))
-    story.append(Paragraph(f"Image reference: {xray_image.image_id}", normal))
-    story.append(Paragraph(f"Uploaded: {xray_image.uploaded_at.strftime('%Y-%m-%d %H:%M UTC')}", normal))
-    story.append(Spacer(1, 8))
 
     story.append(Paragraph("AI Analysis", heading_style))
-    conditions = json.loads(analysis_result.predicted_conditions)
-    cond_rows = [["Condition", "Confidence"]] + [
-        [c["label"], f"{c['confidence']*100:.1f}%"] for c in conditions[:6]
-    ]
-    cond_table = Table(cond_rows, colWidths=[300, 120])
-    cond_table.setStyle(TableStyle([
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f4c81")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-    ]))
-    story.append(cond_table)
-    story.append(Spacer(1, 6))
-    story.append(Paragraph(
-        f"Uncertainty status: <b>{analysis_result.uncertainty_status.value if hasattr(analysis_result.uncertainty_status, 'value') else analysis_result.uncertainty_status}</b>",
-        normal))
+    is_ood = analysis_result.top_prediction_label == "Unknown / Outside Training Classes"
+
+    if is_ood:
+        story.append(Paragraph("<b>Prediction:</b> Unknown / Outside Training Classes", normal))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph("<b>Confidence:</b> " + f"{analysis_result.top_prediction_confidence*100:.1f}%", normal))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph("<b>Model Training Classes:</b> Normal, Pneumonia, COVID-19, Tuberculosis", normal))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph("<b>Interpretation:</b> The uploaded X-ray appears to be outside the distribution of the classes used to train this model. The model is not trained to reliably classify other conditions.", normal))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph("<b>Recommendation:</b> Clinical interpretation by a qualified medical professional is required.", normal))
+        story.append(Spacer(1, 8))
+    else:
+        conditions = json.loads(analysis_result.predicted_conditions)
+        cond_rows = [["Condition", "Confidence"]] + [
+            [c["label"], f"{c['confidence']*100:.1f}%"] for c in conditions[:6]
+        ]
+        cond_table = Table(cond_rows, colWidths=[300, 120])
+        cond_table.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f4c81")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ]))
+        story.append(cond_table)
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(
+            f"Uncertainty status: <b>{analysis_result.uncertainty_status.value if hasattr(analysis_result.uncertainty_status, 'value') else analysis_result.uncertainty_status}</b>",
+            normal))
+        story.append(Spacer(1, 8))
+    # story.append(Paragraph("X-Ray Findings", heading_style))
+    # story.append(Paragraph("• Specific radiological findings (e.g., consolidation, effusion, infiltrates) are not extractable by the current AI model.", normal))
+    # story.append(Paragraph("• The current AI architecture is a global disease classifier and does not output localized radiological descriptors.", normal))
     story.append(Spacer(1, 8))
 
     if xray_image.image_path and os.path.exists(xray_image.image_path):
@@ -110,27 +117,19 @@ def generate_report_pdf(patient, xray_image, analysis_result, output_path: str) 
                     
         if images_row:
             story.append(Table([images_row]))
-        story.append(Paragraph(
-            "Note: highlighted regions indicate areas that influenced the AI "
-            "prediction and are not a confirmed disease location.", normal))
+        
+        if analysis_result.heatmap_path:
+            story.append(Paragraph(
+                "Model Attention Visualization — Not a Diagnostic Finding" if is_ood else "AI-highlighted regions indicate areas of the X-ray that contributed to the model's prediction.", normal))
+        else:
+            story.append(Paragraph("No abnormal region detected. Original image shown above.", normal))
+        
         story.append(Spacer(1, 8))
 
     story.append(Paragraph("Priority", heading_style))
     priority_val = analysis_result.priority.value if hasattr(analysis_result.priority, "value") else analysis_result.priority
     story.append(Paragraph(f"Priority level: <b>{priority_val}</b>", normal))
     story.append(Spacer(1, 8))
-
-    story.append(Paragraph("Summary", heading_style))
-    top_label = analysis_result.top_prediction_label
-    top_conf = analysis_result.top_prediction_confidence * 100
-    story.append(Paragraph(
-        f"The AI analysis suggests findings most consistent with <b>{top_label}</b> "
-        f"({top_conf:.1f}% confidence). Priority classified as {priority_val}.", normal))
-    story.append(Spacer(1, 14))
-
-    disclaimer_style = ParagraphStyle("Disclaimer", parent=normal, textColor=colors.HexColor("#b03a2e"),
-                                       fontSize=9, italic=True)
-    story.append(Paragraph(f"<i>{DISCLAIMER}</i>", disclaimer_style))
 
     doc.build(story)
     return output_path

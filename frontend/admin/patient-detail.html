@@ -93,12 +93,12 @@
         const topbarDiv = document.querySelector(".topbar > div");
         if (topbarDiv) topbarDiv.appendChild(topbarSub);
       }
-      if (topbarSub) topbarSub.textContent = `Patient ID: ${p.patient_id}`;
+      if (topbarSub) topbarSub.textContent = `Patient ID: ${p.patient_display_id}`;
       patientCard.innerHTML = `
         <div class="flex-between">
           <div>
             <h3 class="mb-0">${escapeHtml(p.name)}</h3>
-            <div class="text-muted mono" style="font-size:12.5px; margin-top:4px;">${p.patient_id}</div>
+            <div class="text-muted mono" style="font-size:12.5px; margin-top:4px;">${p.patient_display_id}</div>
           </div>
           <button class="btn btn-outline btn-sm" id="edit-btn">Edit</button>
         </div>

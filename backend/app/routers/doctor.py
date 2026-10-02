@@ -32,8 +32,10 @@ def dashboard(db: Session = Depends(get_db), doctor: Doctor = Depends(require_do
         
         recent_reports_out.append({
             "report_id": r.report_id,
+            "report_display_id": r.report_display_id,
             "patient_name": p.name,
             "patient_id": p.patient_id,
+            "patient_display_id": p.patient_display_id,
             "predicted_condition": a.top_prediction_label,
             "confidence": a.top_prediction_confidence,
             "priority": a.priority.value if hasattr(a.priority, "value") else a.priority,
@@ -59,8 +61,10 @@ def list_reports(db: Session = Depends(get_db), doctor: Doctor = Depends(require
         
         out.append({
             "report_id": r.report_id,
+            "report_display_id": r.report_display_id,
             "patient_name": p.name,
             "patient_id": p.patient_id,
+            "patient_display_id": p.patient_display_id,
             "predicted_condition": a.top_prediction_label,
             "confidence": a.top_prediction_confidence,
             "priority": a.priority.value if hasattr(a.priority, "value") else a.priority,
@@ -81,12 +85,18 @@ def get_report_detail(report_id: str, db: Session = Depends(get_db), doctor: Doc
 
     return {
         "report_id": report.report_id,
+        "report_display_id": report.report_display_id,
         "report_path": report.report_path,
         "generated_at": report.generated_at,
+        "status": report.status.value if hasattr(report.status, "value") else report.status,
         "patient": PatientOut.model_validate(patient),
         "xray_image_path": xray.image_path,
         "analysis": AnalysisResultOut(
-            result_id=analysis.result_id, image_id=analysis.image_id,
+            result_id=analysis.result_id,
+            result_display_id=analysis.result_display_id,
+            image_id=analysis.image_id,
+            patient_name=patient.name,
+            patient_display_id=patient.patient_display_id,
             predicted_conditions=json.loads(analysis.predicted_conditions),
             top_prediction_label=analysis.top_prediction_label,
             top_prediction_confidence=analysis.top_prediction_confidence,

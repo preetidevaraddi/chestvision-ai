@@ -49,6 +49,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     role: str
     name: str
+    email: str
 
 
 # ---------- Patient ----------
@@ -71,6 +72,7 @@ class PatientUpdate(BaseModel):
 
 class PatientOut(BaseModel):
     patient_id: str
+    patient_display_id: Optional[str] = None
     name: str
     age: int
     gender: str
@@ -102,7 +104,10 @@ class ConditionScore(BaseModel):
 
 class AnalysisResultOut(BaseModel):
     result_id: str
+    result_display_id: Optional[str] = None
     image_id: str
+    patient_name: Optional[str] = None
+    patient_display_id: Optional[str] = None
     predicted_conditions: List[ConditionScore]
     top_prediction_label: str
     top_prediction_confidence: float
@@ -119,7 +124,13 @@ class AnalysisResultOut(BaseModel):
 
 class ReportOut(BaseModel):
     report_id: str
+    report_display_id: Optional[str] = None
     analysis_result_id: str
+    patient_name: Optional[str] = None
+    patient_display_id: Optional[str] = None
+    top_prediction_label: Optional[str] = None
+    top_prediction_confidence: Optional[float] = None
+    priority: Optional[str] = None
     report_path: str
     generated_at: datetime
     status: str = "pending"

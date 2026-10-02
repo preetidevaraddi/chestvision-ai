@@ -36,14 +36,12 @@ const ADMIN_NAV = [
   { href: "dashboard.html", label: "Dashboard", icon: "dashboard" },
   { href: "patients.html", label: "Patients", icon: "patients" },
   { href: "add-patient.html", label: "Add Patient", icon: "addPatient" },
-  { href: "analysis-history.html", label: "Analysis History", icon: "history" },
   { href: "reports.html", label: "Reports", icon: "reports" },
   { href: "profile.html", label: "Profile", icon: "profile" },
 ];
 
 const DOCTOR_NAV = [
   { href: "dashboard.html", label: "Dashboard", icon: "dashboard" },
-  { href: "reports.html", label: "Patient Reports", icon: "reports" },
   { href: "profile.html", label: "Profile", icon: "profile" },
 ];
 

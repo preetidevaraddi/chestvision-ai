@@ -87,27 +87,40 @@ def analyze_xray(image_path: str) -> dict:
         reverse=True,
     )
     top = predicted_conditions[0]
-    uncertainty_status = classify_uncertainty(top["confidence"])
-    priority = assess_priority(predicted_conditions, top["label"], top["confidence"])
+    original_top_label = top["label"]
 
-    # Suspicious-region visualization (Grad-CAM) for the top predicted class
+    # OOD Detection: Maximum Softmax Probability (MSP) baseline
+    is_ood = top["confidence"] < 0.65
+
+    if is_ood:
+        top_label = "Unknown / Outside Training Classes"
+        uncertainty_status = "Out of Distribution"
+        priority = "Requires Review"
+        predicted_conditions = [{"label": top_label, "confidence": top["confidence"]}]
+    else:
+        top_label = original_top_label
+        uncertainty_status = classify_uncertainty(top["confidence"])
+        priority = assess_priority(predicted_conditions, top_label, top["confidence"])
+
+    # Suspicious-region visualization (Grad-CAM) for abnormal predicted classes
     heatmap_url = None
-    try:
-        cam = GradCAM(model, model.get_last_conv_layer())
-        top_idx = labels.index(top["label"])
-        heatmap = cam.generate(input_tensor, top_idx)
-        heatmap_filename = f"heatmap_{uuid.uuid4().hex}.png"
-        absolute_heatmap_path = os.path.join(settings.UPLOAD_DIR, heatmap_filename)
-        save_overlay(image_path, heatmap, absolute_heatmap_path)
-        heatmap_url = f"/files/uploads/{heatmap_filename}"
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Grad-CAM generation failed: {e}")
-        heatmap_url = None  # explanation is best-effort; never block the core result
+    if original_top_label.lower() != "normal":
+        try:
+            cam = GradCAM(model, model.get_last_conv_layer())
+            top_idx = labels.index(original_top_label)
+            heatmap = cam.generate(input_tensor, top_idx)
+            heatmap_filename = f"heatmap_{uuid.uuid4().hex}.png"
+            absolute_heatmap_path = os.path.join(settings.UPLOAD_DIR, heatmap_filename)
+            save_overlay(image_path, heatmap, absolute_heatmap_path)
+            heatmap_url = f"/files/uploads/{heatmap_filename}"
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Grad-CAM generation failed: {e}")
+            heatmap_url = None  # explanation is best-effort; never block the core result
 
     return {
         "predicted_conditions": predicted_conditions,
-        "top_prediction_label": top["label"],
+        "top_prediction_label": top_label,
         "top_prediction_confidence": top["confidence"],
         "uncertainty_status": uncertainty_status,
         "priority": priority,

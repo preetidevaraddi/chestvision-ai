@@ -1,36 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profile — ChestVision AI</title>
-<link rel="stylesheet" href="../css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Profile — ChestVision AI</title>
+
+  <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
+
 <div id="app-shell-root">
-  <div class="card" style="max-width:480px;">
-    <div class="flex-gap mb-16">
-      <div style="width:48px; height:48px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:18px;" id="avatar"></div>
-      <div>
-        <h3 class="mb-0" id="profile-name"></h3>
-        <span class="role-pill">Admin</span>
+
+  <div class="card" style="
+    max-width: 950px;
+    margin: 36px auto;
+    padding: 40px;
+  ">
+
+    <!-- Profile Header -->
+    <div style="
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid #d9e4e8;
+    ">
+
+      <div id="profile-initial" style="
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: #e4f1f3;
+        color: #006b83;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
+        font-weight: 600;
+      ">
+        A
       </div>
+
+      <div>
+
+        <h1 id="profile-name" style="
+          margin: 0 0 10px 0;
+          font-size: 32px;
+        ">
+          Admin
+        </h1>
+
+        <span style="
+          display: inline-block;
+          background: #e4f1f3;
+          color: #006b83;
+          padding: 5px 13px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        ">
+          ADMIN
+        </span>
+
+      </div>
+
     </div>
-    <div class="text-muted" style="font-size:13.5px;">
-      Signed in as the administrator for ChestVision AI. Admins manage patient records, upload chest
-      X-rays, run AI analysis, and generate reports.
+
+
+    <!-- Profile Information -->
+
+    <h2 style="
+      margin-top: 40px;
+      margin-bottom: 22px;
+    ">
+      Profile Information
+    </h2>
+
+
+    <div style="
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    ">
+
+      <!-- Name -->
+
+      <div style="
+        background: #f7fafb;
+        border: 1px solid #d9e5e9;
+        border-radius: 12px;
+        padding: 22px;
+      ">
+
+        <div style="
+          color: #6c8290;
+          margin-bottom: 10px;
+        ">
+          Name
+        </div>
+
+        <div id="admin-name" style="
+          font-size: 20px;
+          font-weight: 600;
+        ">
+          Admin
+        </div>
+
+      </div>
+
+
+      <!-- Role -->
+
+      <div style="
+        background: #f7fafb;
+        border: 1px solid #d9e5e9;
+        border-radius: 12px;
+        padding: 22px;
+      ">
+
+        <div style="
+          color: #6c8290;
+          margin-bottom: 10px;
+        ">
+          Role
+        </div>
+
+        <div style="
+          font-size: 20px;
+          font-weight: 600;
+        ">
+          Administrator
+        </div>
+
+      </div>
+
+
+      <!-- System -->
+
+      <div style="
+        background: #f7fafb;
+        border: 1px solid #d9e5e9;
+        border-radius: 12px;
+        padding: 22px;
+      ">
+
+        <div style="
+          color: #6c8290;
+          margin-bottom: 10px;
+        ">
+          System
+        </div>
+
+        <div style="
+          font-size: 20px;
+          font-weight: 600;
+        ">
+          ChestVision AI
+        </div>
+
+      </div>
+
+
+      <!-- Access -->
+
+      <div style="
+        background: #f7fafb;
+        border: 1px solid #d9e5e9;
+        border-radius: 12px;
+        padding: 22px;
+      ">
+
+        <div style="
+          color: #6c8290;
+          margin-bottom: 10px;
+        ">
+          Access
+        </div>
+
+        <div style="
+          font-size: 20px;
+          font-weight: 600;
+        ">
+          Admin Console
+        </div>
+
+      </div>
+
+
+      <!-- Access Type -->
+
+     
+
     </div>
+
   </div>
+
 </div>
+
 
 <script src="../js/api.js"></script>
 <script src="../js/ui.js"></script>
+
 <script>
+
   Auth.requireRole("admin");
-  renderShell({ role: "admin", pageTitle: "Profile" });
-  const name = Auth.getName() || "Admin";
-  document.getElementById("profile-name").textContent = name;
-  document.getElementById("avatar").textContent = name.charAt(0).toUpperCase();
+
+  renderShell({
+    role: "admin",
+    pageTitle: "Profile",
+    pageSub: "View your admin profile"
+  });
+
+
+  // Get admin name from the current login session
+
+  const adminName = Auth.getName() || "Admin";
+
+  document.getElementById("profile-name").textContent = adminName;
+  document.getElementById("admin-name").textContent = adminName;
+
+  document.getElementById("profile-initial").textContent =
+    adminName.charAt(0).toUpperCase();
+
 </script>
+
 </body>
 </html>

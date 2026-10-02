@@ -34,6 +34,7 @@
       }
 
       const topPct = Math.round(analysis.top_prediction_confidence * 100);
+      const isOod = analysis.top_prediction_label === "Unknown / Outside Training Classes";
 
       wrap.innerHTML = `
         ${analysis.is_demo_model ? `<div class="alert alert-demo"><strong>DEMO MODE:</strong> ${escapeHtml(analysis.disclaimer)}</div>` : `<div class="alert alert-info">${escapeHtml(analysis.disclaimer)}</div>`}
@@ -43,6 +44,7 @@
             <div>
               <div class="text-muted" style="font-size:12.5px; text-transform:uppercase; letter-spacing:0.03em;">Top Prediction</div>
               <h2 style="font-size:24px; margin-top:4px;">${escapeHtml(analysis.top_prediction_label)}</h2>
+              ${isOod ? `<div class="text-muted" style="margin-top:4px; font-size:13px;">Model Status: <span style="color:var(--status-review); font-weight:600;">Outside trained classes</span></div>` : `<div class="text-muted" style="margin-top:4px; font-size:13px;">Model Status: <span style="color:var(--status-normal); font-weight:600;">Within trained classes</span></div>`}
             </div>
             <div class="flex-gap">
               ${uncertaintyBadgeHtml(analysis.uncertainty_status)}
@@ -54,6 +56,11 @@
             &nbsp;·&nbsp; Analyzed ${formatDate(analysis.analyzed_at)}
           </div>
         </div>
+        
+        ${isOod ? `
+        <div class="alert mb-16" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">
+          <strong>⚠ Warning:</strong> This model was trained only on Normal, Pneumonia, COVID-19, and Tuberculosis. The uploaded X-ray may contain a condition outside these training classes, so a specific disease prediction cannot be provided reliably.
+        </div>` : ""}
 
         <div class="flex" style="gap:16px; flex-wrap:wrap;">
           <div class="card" style="flex:1; min-width:320px;">
@@ -67,10 +74,9 @@
               analysis.heatmap_path
                 ? `<div class="preview-frame"><img src="${fileUrl(analysis.heatmap_path)}" alt="Suspicious region heatmap"></div>
                    <p class="text-muted mt-8" style="font-size:12px;">
-                     Highlighted regions indicate areas that influenced the AI prediction.
-                     This is not a confirmed disease location.
+                     ${isOod ? "Model Attention Visualization — Not a Diagnostic Finding" : "Highlighted regions indicate areas that influenced the AI prediction. This is not a confirmed disease location."}
                    </p>`
-                : `<div class="empty-state">No visual explanation available for this result.</div>`
+                : `<div class="empty-state">No abnormal region detected.</div>`
             }
           </div>
         </div>
